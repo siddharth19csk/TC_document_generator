@@ -16,20 +16,17 @@ validateConfig();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+// Security middleware - disable restrictive CSP that blocks script bundles on remote tunnels
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
-// CORS
-const allowedOrigins = [
-  process.env.CORS_ORIGIN || 'http://localhost:5173',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
+// CORS - allow local and remote tunnel origins
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: true,
   credentials: true,
 }));
 
