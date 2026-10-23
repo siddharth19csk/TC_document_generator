@@ -4,6 +4,8 @@
   "description": "AI-powered daily document generator - generates structured test cases from team updates",
   "private": true,
   "scripts": {
+    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
+    "start": "node server/index.js",
     "install:all": "npm install --prefix server && npm install --prefix client",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
