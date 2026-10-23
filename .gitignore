@@ -1,0 +1,29 @@
+# Environment
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output
+client/dist/
+client/build/
+
+# Generated DOCX files
+server/generated/*.docx
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

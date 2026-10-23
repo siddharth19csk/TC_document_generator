@@ -1,0 +1,271 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "afe2921f-8bea-42ba-aa3a-121cef1bd835",
+        "formTitle": "Daily Document Generator",
+        "formDescription": "Paste your daily team updates below to generate the Release Certificate and Testcase Document.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Daily Raw Details",
+              "fieldType": "string",
+              "placeholder": "Paste version numbers, features, test steps, conditions, or teammate notes here...",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Report Code"
+            },
+            {
+              "fieldLabel": "Certified By"
+            },
+            {
+              "fieldLabel": "Ticket Number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        -576
+      ],
+      "id": "3e34272e-3fe7-4a67-aaf3-74ee64195892",
+      "name": "On Form Submit",
+      "webhookId": "afe2921f-8bea-42ba-aa3a-121cef1bd835"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a precise system integration agent mapping raw OneStream ticket\nnotes into two structured JSON objects for a corporate Word document\ntemplate engine. Do not invent facts not present or reasonably inferable\nfrom the notes below.\n\nRaw Activity Notes:\n{{ $json[\"Daily Raw Details\"] }}\n\nSTEP 1 - CLASSIFY THE TICKET TYPE\n- CUBE_VIEW: notes mention cube view names, report formatting, margins,\n  data changes, or any OneStream CubeView configuration change.\n- PARAMETER_CHANGE: notes mention OneStream parameter names, workflow\n  rule settings, or business-rule parameter values being changed.\n- BOOK: notes mention creating/updating a Book (.xlBook, .xfDoc.xlBook\n  files), \"Book folder\", or \"Fixed Assets Review Book\" style deliverables.\n  This is NOT a cube view, even if it references cube views internally -\n  if the notes say \"Book\" or the file extension is .xlBook, classify BOOK.\nIf none fit clearly, default to CUBE_VIEW.\n\nSTEP 2 - IF CUBE_VIEW, CLASSIFY THE SUB-TYPE (this determines which fixed\nchecklist to use - read carefully, this matters):\n- FLASH: the report/cube view name starts with \"FLH\" or the notes\n  explicitly say \"Flash report\"/\"Flash cube view\".\n- NEW_BUILD: the notes describe CREATING a brand new cube view and/or a\n  new Business Rule from scratch (not updating an existing one) - look for\n  words like \"created\", \"new cube view\", \"new business rule\", \"profile\n  group\", \"UD8 members\", or report names ending in \"_DATA\"/\"_DATA1\"\n  (these indicate a newly-built source/data cube view pair).\n- NORMAL: everything else - updating margins, formatting, data, or\n  content on an EXISTING report/cube view. This is the default and most\n  common case.\n\nSTEP 3 - BUILD THE \"rc\" OBJECT (always populate this, regardless of ticket_type)\n{\n  \"version\": \"[patch-increment style version, e.g. 0.2.3, or N/A if not mentioned]\",\n  \"project\": \"OneStream\",\n  \"environment\": \"[DEV / QA / PROD - infer from notes, default QA]\",\n  \"build\": \"[build/version identifier mentioned, or N/A]\",\n  \"date\": \"N/A\",\n  \"status\": \"[Approved / Rejected / Conditionally Approved - default Approved]\",\n  \"testing_type\": \"[Smoke / BAT / Regression / Hotfix - infer from notes, default Smoke]\",\n  \"ticket_id\": \"[the ticket ID mentioned, e.g. INC0158214]\",\n  \"report_name\": \"[a clean, underscore-separated report/cube-view name suitable for a filename, e.g. HCMHR_PWR_Weekly_ManHours_PY - use the main report name from the notes]\",\n  \"remarks\": \"[one crisp sentence summarizing what this release does]\",\n  \"changes_summary\": [\"short bullet describing each distinct change made - one array entry per change\"]\n}\n\nSTEP 4 - IF ticket_type IS CUBE_VIEW, BUILD \"tc_cube_view\" USING THE\nCHECKLIST THAT MATCHES THE SUB-TYPE YOU DETECTED IN STEP 2:\n\n--- IF SUB-TYPE = NORMAL, use these exact 8 questions per module: ---\n{\"sno\":\"1\",\"parameter\":\"Check the backup of the cube view is created as _ORG\"}\n{\"sno\":\"2\",\"parameter\":\"Validate that the changes made are reflected in the cube view\"}\n{\"sno\":\"3\",\"parameter\":\"Verify that both PDF and Excel format of the report execute properly\"}\n{\"sno\":\"4\",\"parameter\":\"Validate that both rows and columns foot correctly\"}\n{\"sno\":\"5\",\"parameter\":\"Validate that the requested change item has updated correctly by comparing it with the before one\"}\n{\"sno\":\"6\",\"parameter\":\"Verify that there is no error occur while running the cube view\"}\n{\"sno\":\"7\",\"parameter\":\"Validate all the customers are added by checking the sample QV\"}\n{\"sno\":\"8\",\"parameter\":\"Check Remediation files are created with all the screenshots of changes made\"}\n\n--- IF SUB-TYPE = FLASH, use these exact 8 questions per module: ---\n{\"sno\":\"1\",\"parameter\":\"Verify that there is no error occur while running the cube view\"}\n{\"sno\":\"2\",\"parameter\":\"Validate that all the header, footer and total row format aligns properly in the report\"}\n{\"sno\":\"3\",\"parameter\":\"Verify that both PDF and Excel format of the report execute properly\"}\n{\"sno\":\"4\",\"parameter\":\"Validate that both rows and columns foot correctly\"}\n{\"sno\":\"5\",\"parameter\":\"Validate that the requested change item has updated correctly by comparing it with the before one\"}\n{\"sno\":\"6\",\"parameter\":\"For Flash Reports, Verify that the Report fits in one page in PDF Format\"}\n{\"sno\":\"7\",\"parameter\":\"Check that backup of the cube view is created as _ORG\"}\n{\"sno\":\"8\",\"parameter\":\"Check Remediation files are created with all the screenshots of changes made\"}\n\n--- IF SUB-TYPE = NEW_BUILD, use these exact 9 questions per module: ---\n{\"sno\":\"1\",\"parameter\":\"Verify that the new Cube view profile group is created\"}\n{\"sno\":\"2\",\"parameter\":\"Validated cube view name and description matches with the sample spec provided\"}\n{\"sno\":\"3\",\"parameter\":\"Validate both the source cube views (DATA) are pulling the correct job and data\"}\n{\"sno\":\"4\",\"parameter\":\"Verify the Business Rule works without any syntax error\"}\n{\"sno\":\"5\",\"parameter\":\"Validated the Data Cube view created are working correctly and pulling the correct data\"}\n{\"sno\":\"6\",\"parameter\":\"Validate the main cube view executes correctly with the help of DATA cube views\"}\n{\"sno\":\"7\",\"parameter\":\"Check the rows and columns foots and displays correct jobs\"}\n{\"sno\":\"8\",\"parameter\":\"Validate the Excel and PDF format of the report\"}\n{\"sno\":\"9\",\"parameter\":\"Validate that the test file is created with all check\"}\n\nFull \"tc_cube_view\" shape (this same object shape is used for CUBE_VIEW,\nPARAMETER_CHANGE, and BOOK ticket types - only doc_title, category_label,\nand the checklist content change):\n{\n  \"doc_title\": \"[see the exact title strings below - pick the one matching the classified type]\",\n  \"project_name\": \"Quanta - OneStream\",\n  \"reviewer_name\": \"[reviewer name from notes, else same as certified_by]\",\n  \"review_date\": \"N/A\",\n  \"status\": \"[same as rc.status]\",\n  \"remediation_file_name\": \"[a sensible .xlsx file name for the remediation/test file, or 'N/A']\",\n  \"modules\": [\n    {\n      \"module_name\": \"[cube view / report / parameter / book name mentioned]\",\n      \"category_label\": \"[see below]\",\n      \"checklist\": [ ...the matching fixed list below, with yes_mark/no_mark/na_mark added to each item... ]\n    }\n  ]\n}\n\nFor each checklist item, add \"yes_mark\", \"no_mark\", \"na_mark\" fields:\nexactly one should be \\u2611 (checked), the other two \\u2610. Default to\nYes/checked unless the notes explicitly describe that specific check\nfailing or not applying.\n\n--- IF ticket_type = CUBE_VIEW, sub-type = NORMAL ---\ndoc_title: \"ONESTREAM CUBEVIEW TASK REVIEW CHECKLIST\"\ncategory_label: \"Cube View Configurations\"\n8 questions per module:\n{\"sno\":\"1\",\"parameter\":\"Check the backup of the cube view is created as _ORG\"}\n{\"sno\":\"2\",\"parameter\":\"Validate that the changes made are reflected in the cube view\"}\n{\"sno\":\"3\",\"parameter\":\"Verify that both PDF and Excel format of the report execute properly\"}\n{\"sno\":\"4\",\"parameter\":\"Validate that both rows and columns foot correctly\"}\n{\"sno\":\"5\",\"parameter\":\"Validate that the requested change item has updated correctly by comparing it with the before one\"}\n{\"sno\":\"6\",\"parameter\":\"Verify that there is no error occur while running the cube view\"}\n{\"sno\":\"7\",\"parameter\":\"Validate all the customers are added by checking the sample QV\"}\n{\"sno\":\"8\",\"parameter\":\"Check Remediation files are created with all the screenshots of changes made\"}\n\n--- IF ticket_type = CUBE_VIEW, sub-type = FLASH ---\ndoc_title: \"ONESTREAM FLASH CUBEVIEW TASK REVIEW CHECKLIST\"\ncategory_label: \"Flash Cube View Configurations\"\n8 questions per module:\n{\"sno\":\"1\",\"parameter\":\"Verify that there is no error occur while running the cube view\"}\n{\"sno\":\"2\",\"parameter\":\"Validate that all the header, footer and total row format aligns properly in the report\"}\n{\"sno\":\"3\",\"parameter\":\"Verify that both PDF and Excel format of the report execute properly\"}\n{\"sno\":\"4\",\"parameter\":\"Validate that both rows and columns foot correctly\"}\n{\"sno\":\"5\",\"parameter\":\"Validate that the requested change item has updated correctly by comparing it with the before one\"}\n{\"sno\":\"6\",\"parameter\":\"For Flash Reports, Verify that the Report fits in one page in PDF Format\"}\n{\"sno\":\"7\",\"parameter\":\"Check that backup of the cube view is created as _ORG\"}\n{\"sno\":\"8\",\"parameter\":\"Check Remediation files are created with all the screenshots of changes made\"}\n\n--- IF ticket_type = CUBE_VIEW, sub-type = NEW_BUILD ---\ndoc_title: \"ONESTREAM CUBEVIEW TASK REVIEW CHECKLIST\"\ncategory_label: \"Cube View Configurations\"\n9 questions per module:\n{\"sno\":\"1\",\"parameter\":\"Verify that the new Cube view profile group is created\"}\n{\"sno\":\"2\",\"parameter\":\"Validated cube view name and description matches with the sample spec provided\"}\n{\"sno\":\"3\",\"parameter\":\"Validate both the source cube views (DATA) are pulling the correct job and data\"}\n{\"sno\":\"4\",\"parameter\":\"Verify the Business Rule works without any syntax error\"}\n{\"sno\":\"5\",\"parameter\":\"Validated the Data Cube view created are working correctly and pulling the correct data\"}\n{\"sno\":\"6\",\"parameter\":\"Validate the main cube view executes correctly with the help of DATA cube views\"}\n{\"sno\":\"7\",\"parameter\":\"Check the rows and columns foots and displays correct jobs\"}\n{\"sno\":\"8\",\"parameter\":\"Validate the Excel and PDF format of the report\"}\n{\"sno\":\"9\",\"parameter\":\"Validate that the test file is created with all check\"}\n\n--- IF ticket_type = PARAMETER_CHANGE ---\ndoc_title: \"ONESTREAM PARAMETER TASK REVIEW CHECKLIST\"\ncategory_label: \"Parameter Configurations\"\nmodule_name = the parameter name changed (one module per parameter)\n4 questions per module:\n{\"sno\":\"1\",\"parameter\":\"Verify that the requested parameter is created and appeared in QPM Parameter list in Workspace.\"}\n{\"sno\":\"2\",\"parameter\":\"Validate that the parameter update done correctly and saved properly\"}\n{\"sno\":\"3\",\"parameter\":\"Verify that the parameter works correctly across any sample reports\"}\n{\"sno\":\"4\",\"parameter\":\"Validate that the Default value of parameter is set based on the requirement\"}\n\n--- IF ticket_type = BOOK ---\ndoc_title: \"ONESTREAM BOOK TASK REVIEW CHECKLIST\"\ncategory_label: \"Book Configurations\"\nmodule_name = the book file name changed (one module per book)\n9 questions per module:\n{\"sno\":\"1\",\"parameter\":\"Verify that a user has access for Book and File explorer\"}\n{\"sno\":\"2\",\"parameter\":\"Validate the Loop, change parameter used for the respective book created/updated\"}\n{\"sno\":\"3\",\"parameter\":\"Verify whether all the needed parameters used in the Cube view are included in the book\"}\n{\"sno\":\"4\",\"parameter\":\"Verify whether the Cube View component used is correct\"}\n{\"sno\":\"5\",\"parameter\":\"Verify the Books got saved under the respective Book folder with correct format(pdf, xl, zip)\"}\n{\"sno\":\"6\",\"parameter\":\"Validate the Output name for Excel formatted book by running it.\"}\n{\"sno\":\"7\",\"parameter\":\"Validate the Report Header/Footer of the PDF format book by checking the Entity/Region name\"}\n{\"sno\":\"8\",\"parameter\":\"Validate the Flash Books PDF format to fit into one page\"}\n{\"sno\":\"9\",\"parameter\":\"Verify whether the Maintenance group is set to Administrators. If not, check with the security group access\"}\n\nNOTE ON BOOK FORMATTING: the true corporate Book format uses ONE shared\ntable with each book as its own column (not repeated per-book tables).\nThis automation currently outputs one table per book instead (structurally\nsimpler, same fixed 9 questions, same total count logic). This is a known,\naccepted simplification - do not attempt to change table structure.\n\nThese are fixed, mandatory corporate checklists for every type - use the\nexact wording and order shown. Do not reword, skip, or reorder them.\nCreate one \"modules\" entry - with ALL of that type's questions - for each\ndistinct item (report/parameter/book) the notes mention.\n\nOUTPUT FORMAT\nReturn ONLY a single raw JSON object with this exact top-level shape:\n{\n  \"rc\": { ...as built in step 3... },\n  \"ticket_type\": \"CUBE_VIEW, PARAMETER_CHANGE, or BOOK\",\n  \"cube_view_subtype\": \"NORMAL, FLASH, or NEW_BUILD (only if ticket_type is CUBE_VIEW, else omit)\",\n  \"tc_cube_view\": { ...as built in step 4, populated for whichever type applies... }\n}\nDo not add markdown code fences, backticks, or any explanatory text before\nor after the JSON. Output must be valid, parseable JSON.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -528,
+        -576
+      ],
+      "id": "b5e95ccc-3993-4c91-aa56-f86d1e370b28",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -512,
+        -192
+      ],
+      "id": "a7d74374-0650-4291-a96c-250a42ebde93",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6GjSFTMfzwNvJmBI",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst PizZip = require('pizzip');\nconst Docxtemplater = require('docxtemplater');\n \nconst templatePath = 'C:\\\\Users\\\\siddharth.chandran\\\\Downloads\\\\node-v24.20.0-win-x64\\\\node-v24.20.0-win-x64\\\\templates\\\\RC_TEMPLATE_TAGGED.docx';\nconst content = fs.readFileSync(templatePath, 'binary');\nconst zip = new PizZip(content);\nconst doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });\n \ndoc.render(items[0].json.rc);\n \nconst buf = doc.getZip().generate({ type: 'nodebuffer' });\n \nconst reportCode = $('On Form Submit').item.json['Report Code'] || 'RXXX';\nconst reportName = items[0].json.rc.report_name || items[0].json.rc.ticket_id;\nconst rcFileName = `${reportCode}-${reportName}-Release Certificate.docx`;\n \nreturn [{\n  json: { fileName: rcFileName },\n  binary: {\n    rc_file: {\n      data: buf.toString('base64'),\n      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',\n      fileName: rcFileName\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -640
+      ],
+      "id": "25135b31-fa8e-4763-909b-6662a8ba7bb9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs2 = require('fs');\nconst PizZip2 = require('pizzip');\nconst Docxtemplater2 = require('docxtemplater');\n \nconst tcTemplatePath = 'C:\\\\Users\\\\siddharth.chandran\\\\Downloads\\\\node-v24.20.0-win-x64\\\\node-v24.20.0-win-x64\\\\templates\\\\TC_CUBEVIEW_TEMPLATE_TAGGED.docx';\nconst tcContent = fs2.readFileSync(tcTemplatePath, 'binary');\nconst tcZip = new PizZip2(tcContent);\nconst tcDoc = new Docxtemplater2(tcZip, { paragraphLoop: true, linebreaks: true });\n \ntcDoc.render(items[0].json.tc_cube_view);\n \nconst tcBuf = tcDoc.getZip().generate({ type: 'nodebuffer' });\n \nconst reportCode2 = $('On Form Submit').item.json['Report Code'] || 'RXXX';\nconst reportName2 = items[0].json.rc.report_name || items[0].json.tc_cube_view.modules[0].module_name;\nconst tcFileName = `${reportCode2}-${reportName2}-Testcase Document.docx`;\n \nreturn [{\n  json: {},\n  binary: {\n    tc_file: {\n      data: tcBuf.toString('base64'),\n      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',\n      fileName: tcFileName\n    }\n  }\n}];\n "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -384
+      ],
+      "id": "32530f3d-505b-450b-acbf-08dad68a7af0",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// PASTE THIS INTO THE PARSER NODE (the one between Basic LLM\n// Chain and the two docx-generator Code nodes)\n// ============================================================\n\nconst raw = items[0].json.text\n  || items[0].json.output\n  || items[0].json.response\n  || items[0].json.data\n  || JSON.stringify(items[0].json);\n\nconst cleaned = raw.trim()\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/```\\s*$/i, '')\n  .trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  throw new Error('Could not parse LLM output as JSON. Raw text was: ' + raw.slice(0, 500));\n}\n\n// ---- Today's real date (the AI cannot reliably know this, so never trust it) ----\nconst today = new Date();\nconst mm = String(today.getMonth() + 1).padStart(2, '0');\nconst dd = String(today.getDate()).padStart(2, '0');\nconst yyyy = today.getFullYear();\nconst todayStr = `${mm}/${dd}/${yyyy}`;\n\nif (parsed.rc) {\n  parsed.rc.reviewed_by = 'Lakshmi Akili';\n  parsed.rc.review_reviewed_by = 'Lakshmi Akili';\n\n  // Version is the TEMPLATE's own version number, not the release's -\n  // it's always this fixed value, confirmed identical across every real example\n  parsed.rc.version = '0.2.2';\n\n  if (!parsed.rc.build || parsed.rc.build.toUpperCase() === 'N/A') {\n    parsed.rc.build = '--';\n  }\n\n  parsed.rc.date = todayStr;\n  parsed.rc.build_date = todayStr;\n  parsed.rc.build_no = parsed.rc.build_no || '0.1';\n  parsed.rc.build_remarks = parsed.rc.build_remarks || 'Completed';\n  parsed.rc.defects_identified = parsed.rc.defects_identified || 0;\n  parsed.rc.bugs_fixed = parsed.rc.bugs_fixed || 0;\n\n  // Certified By / Developer Name now comes from the form, not the AI -\n  // this guarantees accuracy and that both fields always match\n  const certifier = $('On Form Submit').item.json['Certified By'] || parsed.rc.certified_by || 'N/A';\n  parsed.rc.certified_by = certifier;\n  parsed.rc.developer_name = certifier;\n\n  // Ticket Number now comes from the form too, not AI extraction\n  parsed.rc.ticket_id = $('On Form Submit').item.json['Ticket Number'] || parsed.rc.ticket_id || 'N/A';\n\n  const env = (parsed.rc.environment || 'QA').toUpperCase();\n  parsed.rc.env_is_dev = env === 'DEV';\n  parsed.rc.env_is_qa = env === 'QA';\n  parsed.rc.env_is_prod = env === 'PROD';\n\n  // review_module and checkin_modules both mirror the environment -\n  // previously missing, which is why \"undefined\" appeared in the doc\n  parsed.rc.review_module = env;\n  parsed.rc.checkin_modules = env;\n\n  const status = (parsed.rc.status || 'Approved').toLowerCase();\n  parsed.rc.status_is_approved = status === 'approved';\n  parsed.rc.status_is_rejected = status === 'rejected';\n  parsed.rc.status_is_conditional = status.includes('conditional');\n\n  const testing = (parsed.rc.testing_type || 'Smoke').toLowerCase();\n  parsed.rc.testing_is_smoke = testing === 'smoke';\n  parsed.rc.testing_is_bat = testing === 'bat';\n  parsed.rc.testing_is_regression = testing === 'regression';\n  parsed.rc.testing_is_hotfix = testing === 'hotfix';\n\n  // ---- Compute REAL test case counts from the actual generated checklist ----\n  let executed = 0, passed = 0, failed = 0;\n  if (parsed.tc_cube_view && Array.isArray(parsed.tc_cube_view.modules)) {\n    for (const mod of parsed.tc_cube_view.modules) {\n      if (!Array.isArray(mod.checklist)) continue;\n      for (const item of mod.checklist) {\n        executed++;\n        if (item.yes_mark === '\\u2611') passed++;\n        else if (item.no_mark === '\\u2611') failed++;\n      }\n    }\n  }\n  parsed.rc.tc_executed = executed;\n  parsed.rc.tc_passed = passed;\n  parsed.rc.tc_failed = failed;\n  parsed.rc.review_tc_count = executed;\n}\n\nif (parsed.tc_cube_view) {\n  parsed.tc_cube_view.review_date = todayStr;\n  parsed.tc_cube_view.reviewer_name = $('On Form Submit').item.json['Certified By'] || parsed.tc_cube_view.reviewer_name || 'N/A';\n\n  // Build the remediation filename properly: <ReportName>_Remediation_MM-DD-YYYY.xlsx\n  const dashDate = todayStr.replace(/\\//g, '-');\n  const rName = (parsed.rc && parsed.rc.report_name) || 'Report';\n  parsed.tc_cube_view.remediation_file_name = `${rName}_Remediation_${dashDate}.xlsx`;\n\n  // Testcase Summary table label adapts to ticket type\n  const typeLabels = { BOOK: 'Total Books', PARAMETER_CHANGE: 'Total Parameters', CUBE_VIEW: 'Total Reports' };\n  parsed.tc_cube_view.total_label = typeLabels[parsed.ticket_type] || 'Total Reports';\n\n  // ---- Testcase Summary table numbers ----\n  const modCount = Array.isArray(parsed.tc_cube_view.modules) ? parsed.tc_cube_view.modules.length : 0;\n  const perReport = modCount > 0 ? (parsed.tc_cube_view.modules[0].checklist || []).length : 0;\n  parsed.tc_cube_view.total_reports = modCount;\n  parsed.tc_cube_view.tc_per_report = perReport;\n  parsed.tc_cube_view.total_testcase = modCount * perReport;\n}\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        -560
+      ],
+      "id": "8bce6f19-a97a-47de-b890-a2973d2c1460",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        640,
+        -576
+      ],
+      "id": "a441f7cf-f288-48ed-8728-87b17c9c6d23",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const PizZip = require('pizzip');\n\nconst rcFile = items[0].binary.rc_file;\nconst tcFile = items[0].binary.tc_file;\n\nif (!rcFile || !tcFile) {\n  throw new Error('Missing rc_file or tc_file - check the Merge node is set to Combine / Merge By Position, and that both Code nodes use those exact binary property names.');\n}\n\nconst zip = new PizZip();\nzip.file(rcFile.fileName, Buffer.from(rcFile.data, 'base64'));\nzip.file(tcFile.fileName, Buffer.from(tcFile.data, 'base64'));\n\nconst zipBuf = zip.generate({ type: 'nodebuffer' });\n\nconst reportCode = $('On Form Submit').item.json['Report Code'] || 'RXXX';\nconst ticketNumber = $('On Form Submit').item.json['Ticket Number'] || 'NoTicket';\nconst zipFileName = `${reportCode}-${ticketNumber}.zip`;\n\nreturn [{\n  json: {},\n  binary: {\n    data: {\n      data: zipBuf.toString('base64'),\n      mimeType: 'application/zip',\n      fileName: zipFileName\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -576
+      ],
+      "id": "e17af010-02b4-4798-aefd-e05cb5352215",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "returnBinary",
+        "completionTitle": "Your documents are ready!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1088,
+        -576
+      ],
+      "id": "516e99cb-2cb7-4c15-8119-dcb0c61de90e",
+      "name": "Form",
+      "webhookId": "6291dcf8-76d7-4456-9d1f-1ef5686ff0f4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On Form Submit": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "06105b13-76ab-45f9-bdb1-dd5a1614a055",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5864a7b21075dc76506efc8511cd504e2ed531ead8d64b9fcb60d9d1ebd6b5eb"
+  },
+  "nodeGroups": [],
+  "id": "qeDK1bXjM8D2hXZg",
+  "tags": []
+}
