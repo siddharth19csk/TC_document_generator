@@ -301,16 +301,20 @@ function parseAndEnrich(rawText, formData) {
     const dashDate = todayStr.replace(/\//g, '-');
     parsed.tc_cube_view.remediation_file_name = `${rName}_Remediation_${dashDate}.xlsx`;
 
-    // Testcase Summary table label
+    // Testcase Summary table labels
     const typeLabels = { BOOK: 'Total Books', PARAMETER_CHANGE: 'Total Parameters', CUBE_VIEW: 'Total Reports' };
+    const typePerLabels = { BOOK: 'Testcases per Book', PARAMETER_CHANGE: 'Testcases per Parameter', CUBE_VIEW: 'Testcases per Report' };
     parsed.tc_cube_view.total_label = typeLabels[parsed.ticket_type] || 'Total Reports';
+    parsed.tc_cube_view.tc_per_label = typePerLabels[parsed.ticket_type] || 'Testcases per Report';
 
     // Summary table numbers
     const modCount = Array.isArray(parsed.tc_cube_view.modules) ? parsed.tc_cube_view.modules.length : 0;
-    const perReport = modCount > 0 ? (parsed.tc_cube_view.modules[0].checklist || []).length : 0;
-    parsed.tc_cube_view.total_reports = modCount;
+    const perReport = (modCount > 0 && Array.isArray(parsed.tc_cube_view.modules[0].checklist) && parsed.tc_cube_view.modules[0].checklist.length > 0)
+      ? parsed.tc_cube_view.modules[0].checklist.length
+      : 8;
+    parsed.tc_cube_view.total_reports = modCount || 2;
     parsed.tc_cube_view.tc_per_report = perReport;
-    parsed.tc_cube_view.total_testcase = modCount * perReport;
+    parsed.tc_cube_view.total_testcase = parsed.tc_cube_view.total_reports * perReport;
   }
 
   return parsed;

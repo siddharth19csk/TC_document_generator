@@ -71,6 +71,27 @@ export async function generateDocument(formData, aiData) {
   const tcTemplatePath = resolveTCTemplate();
   const tcData = aiData.tc_cube_view || {};
 
+  // Ensure summary table labels and counts are NEVER empty
+  const typeTotalLabels = { BOOK: 'Total Books', PARAMETER_CHANGE: 'Total Parameters', CUBE_VIEW: 'Total Reports' };
+  const typePerLabels = { BOOK: 'Testcases per Book', PARAMETER_CHANGE: 'Testcases per Parameter', CUBE_VIEW: 'Testcases per Report' };
+  const ticketType = aiData.ticket_type || 'CUBE_VIEW';
+
+  tcData.total_label = tcData.total_label || typeTotalLabels[ticketType] || 'Total Reports';
+  tcData.tc_per_label = tcData.tc_per_label || typePerLabels[ticketType] || 'Testcases per Report';
+
+  const modCount = Array.isArray(tcData.modules) ? tcData.modules.length : 0;
+  const firstModChecklistCount = (modCount > 0 && Array.isArray(tcData.modules[0].checklist))
+    ? tcData.modules[0].checklist.length
+    : 0;
+
+  const perReport = Number(tcData.tc_per_report) || firstModChecklistCount || 8;
+  const totalReports = Number(tcData.total_reports) || (modCount > 0 ? modCount : 2);
+  const totalTestcase = Number(tcData.total_testcase) || (totalReports * perReport);
+
+  tcData.total_reports = totalReports;
+  tcData.tc_per_report = perReport;
+  tcData.total_testcase = totalTestcase;
+
   // Ensure module_number is present (template may need it)
   if (Array.isArray(tcData.modules)) {
     tcData.modules = tcData.modules.map((m, i) => ({
