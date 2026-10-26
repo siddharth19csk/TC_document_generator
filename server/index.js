@@ -16,6 +16,9 @@ validateConfig();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for Render and Cloudflare tunnel rate limiting
+app.set('trust proxy', 1);
+
 // Security middleware - disable restrictive CSP that blocks script bundles on remote tunnels
 app.use(helmet({
   contentSecurityPolicy: false,
