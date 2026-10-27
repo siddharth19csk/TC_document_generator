@@ -37,6 +37,9 @@ STEP 1 - CLASSIFY THE TICKET TYPE
   files), "Book folder", or "Fixed Assets Review Book" style deliverables.
   This is NOT a cube view, even if it references cube views internally -
   if the notes say "Book" or the file extension is .xlBook, classify BOOK.
+- DASHBOARD: notes explicitly mention "Dashboard", "dashboard updation",
+  "planning dashboard", or "dashboard configuration". This is distinct from
+  cube views even if dashboards contain cube views.
 If none fit clearly, default to CUBE_VIEW.
 
 STEP 2 - IF CUBE_VIEW, CLASSIFY THE SUB-TYPE (this determines which fixed
@@ -165,16 +168,34 @@ module_name = the book file name changed (one module per book)
 {"sno":"8","parameter":"Validate the Flash Books PDF format to fit into one page"}
 {"sno":"9","parameter":"Verify whether the Maintenance group is set to Administrators. If not, check with the security group access"}
 
+--- IF ticket_type = DASHBOARD ---
+doc_title: "ONESTREAM DASHBOARD TASK REVIEW CHECKLIST"
+category_label: "Dashboard Updation"
+module_name = the dashboard name mentioned (one module per dashboard)
+12 questions per module:
+{"sno":"1","parameter":"Verify that the dashboard is accessible and loads without errors"}
+{"sno":"2","parameter":"Validate that the dashboard layout and design match the requirements"}
+{"sno":"3","parameter":"Verify that all widgets/components on the dashboard display correct data"}
+{"sno":"4","parameter":"Validate that the dashboard filters and parameters work correctly"}
+{"sno":"5","parameter":"Verify that the dashboard data refreshes properly when parameters are changed"}
+{"sno":"6","parameter":"Validate that all cube views embedded in the dashboard execute without errors"}
+{"sno":"7","parameter":"Verify that the dashboard is accessible to the correct user groups/roles"}
+{"sno":"8","parameter":"Validate that the requested change has been correctly implemented and matches the requirement"}
+{"sno":"9","parameter":"Verify that the backup of the original dashboard is created as _ORG"}
+{"sno":"10","parameter":"Validate that the dashboard performs correctly across different time periods/scenarios"}
+{"sno":"11","parameter":"Verify there are no broken links or missing components on the dashboard"}
+{"sno":"12","parameter":"Check that Remediation files are created with all screenshots of changes made"}
+
 These are fixed, mandatory corporate checklists for every type - use the
 exact wording and order shown. Do not reword, skip, or reorder them.
 Create one "modules" entry - with ALL of that type's questions - for each
-distinct item (report/parameter/book) the notes mention.
+distinct item (report/parameter/book/dashboard) the notes mention.
 
 OUTPUT FORMAT
 Return ONLY a single raw JSON object with this exact top-level shape:
 {
   "rc": { ...as built in step 3... },
-  "ticket_type": "CUBE_VIEW, PARAMETER_CHANGE, or BOOK",
+  "ticket_type": "CUBE_VIEW, PARAMETER_CHANGE, BOOK, or DASHBOARD",
   "cube_view_subtype": "NORMAL, FLASH, or NEW_BUILD (only if ticket_type is CUBE_VIEW, else omit)",
   "tc_cube_view": { ...as built in step 4, populated for whichever type applies... }
 }
@@ -302,8 +323,8 @@ function parseAndEnrich(rawText, formData) {
     parsed.tc_cube_view.remediation_file_name = `${rName}_Remediation_${dashDate}.xlsx`;
 
     // Testcase Summary table labels
-    const typeLabels = { BOOK: 'Total Books', PARAMETER_CHANGE: 'Total Parameters', CUBE_VIEW: 'Total Reports' };
-    const typePerLabels = { BOOK: 'Testcases per Book', PARAMETER_CHANGE: 'Testcases per Parameter', CUBE_VIEW: 'Testcases per Report' };
+    const typeLabels = { BOOK: 'Total Books', PARAMETER_CHANGE: 'Total Parameters', CUBE_VIEW: 'Total Reports', DASHBOARD: 'Total Dashboards' };
+    const typePerLabels = { BOOK: 'Testcases per Book', PARAMETER_CHANGE: 'Testcases per Parameter', CUBE_VIEW: 'Testcases per Report', DASHBOARD: 'Testcases per dashboard' };
     parsed.tc_cube_view.total_label = typeLabels[parsed.ticket_type] || 'Total Reports';
     parsed.tc_cube_view.tc_per_label = typePerLabels[parsed.ticket_type] || 'Testcases per Report';
 

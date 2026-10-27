@@ -22,6 +22,20 @@ function resolveTCTemplate() {
   throw new Error('TC template not found. Ensure TC_CUBEVIEW_TEMPLATE_TAGGED.docx is in the templates/ folder.');
 }
 
+// Template resolver — TC Dashboard template
+function resolveDashboardTemplate() {
+  const candidates = [
+    path.resolve(__dirname, '../../templates/TC_DASHBOARD_TEMPLATE_TAGGED.docx'),
+    path.resolve(__dirname, '../templates/TC_DASHBOARD_TEMPLATE_TAGGED.docx'),
+    path.resolve(process.cwd(), 'templates/TC_DASHBOARD_TEMPLATE_TAGGED.docx'),
+    path.resolve(process.cwd(), '../templates/TC_DASHBOARD_TEMPLATE_TAGGED.docx'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return null; // Fall back to cube view template if not found
+}
+
 // Template resolver — Release Certificate template
 function resolveRCTemplate() {
   const candidates = [
@@ -68,13 +82,21 @@ export async function generateDocument(formData, aiData) {
         : formData.reportCode || 'Report');
 
   // ── Testcase Document ──────────────────────────────────────────────────────
-  const tcTemplatePath = resolveTCTemplate();
+  const ticketType = aiData.ticket_type || 'CUBE_VIEW';
+
+  // Choose template based on ticket type
+  let tcTemplatePath;
+  if (ticketType === 'DASHBOARD') {
+    tcTemplatePath = resolveDashboardTemplate() || resolveTCTemplate();
+  } else {
+    tcTemplatePath = resolveTCTemplate();
+  }
+
   const tcData = aiData.tc_cube_view || {};
 
   // Ensure summary table labels and counts are NEVER empty
-  const typeTotalLabels = { BOOK: 'Total Books', PARAMETER_CHANGE: 'Total Parameters', CUBE_VIEW: 'Total Reports' };
-  const typePerLabels = { BOOK: 'Testcases per Book', PARAMETER_CHANGE: 'Testcases per Parameter', CUBE_VIEW: 'Testcases per Report' };
-  const ticketType = aiData.ticket_type || 'CUBE_VIEW';
+  const typeTotalLabels = { BOOK: 'Total Books', PARAMETER_CHANGE: 'Total Parameters', CUBE_VIEW: 'Total Reports', DASHBOARD: 'Total Dashboards' };
+  const typePerLabels = { BOOK: 'Testcases per Book', PARAMETER_CHANGE: 'Testcases per Parameter', CUBE_VIEW: 'Testcases per Report', DASHBOARD: 'Testcases per dashboard' };
 
   tcData.total_label = tcData.total_label || typeTotalLabels[ticketType] || 'Total Reports';
   tcData.tc_per_label = tcData.tc_per_label || typePerLabels[ticketType] || 'Testcases per Report';
