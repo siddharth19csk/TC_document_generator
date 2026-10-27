@@ -1,11 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-function getModel() {
+const FALLBACK_MODELS = [
+  process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  'gemini-flash-latest',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-pro'
+];
+
+function getModelInstance(modelName) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY is not set.');
   const genAI = new GoogleGenerativeAI(apiKey);
   return genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    model: modelName,
     generationConfig: {
       temperature: 0.3,
       topK: 40,
@@ -348,28 +355,56 @@ function parseAndEnrich(rawText, formData) {
 }
 
 export async function generateTestcases(formData) {
-  const model = getModel();
   const prompt = buildPrompt(formData);
+  const models = [...new Set(FALLBACK_MODELS)];
+  let lastError = null;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const rawText = result.response.text();
+  for (const modelName of models) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        console.log(`[aiService] Attempting generation with ${modelName} (attempt ${attempt})...`);
+        const model = getModelInstance(modelName);
+        const result = await model.generateContent(prompt);
+        const rawText = result.response.text();
 
-    if (!rawText || rawText.trim().length === 0) {
-      throw new Error('AI returned an empty response.');
+        if (!rawText || rawText.trim().length === 0) {
+          throw new Error('AI returned an empty response.');
+        }
+
+        console.log(`[aiService] Generation successful with model: ${modelName}`);
+        return parseAndEnrich(rawText, formData);
+      } catch (err) {
+        lastError = err;
+        const msg = err.message || '';
+        const is503 = msg.includes('503') || msg.includes('high demand') || msg.includes('Service Unavailable');
+        console.warn(`[aiService] ${modelName} (attempt ${attempt}) failed:`, msg);
+
+        if (is503 && attempt < 2) {
+          console.log('[aiService] Waiting 1.5s before retry...');
+          await new Promise((r) => setTimeout(r, 1500));
+          continue;
+        }
+
+        // Try next fallback model if 503 or transient failure
+        break;
+      }
     }
+  }
 
-    return parseAndEnrich(rawText, formData);
-  } catch (err) {
-    if (err.message.includes('API_KEY') || err.message.includes('PERMISSION_DENIED')) {
+  if (lastError) {
+    const msg = lastError.message || '';
+    if (msg.includes('API_KEY') || msg.includes('PERMISSION_DENIED')) {
       throw new Error('Invalid Gemini API key. Check your GEMINI_API_KEY configuration.');
     }
-    if (err.message.includes('RESOURCE_EXHAUSTED') || err.message.includes('quota')) {
-      throw new Error('Gemini API quota exceeded. Please wait and retry.');
+    if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+      throw new Error('Gemini API quota exceeded. Please wait a moment and retry.');
     }
-    if (err.message.includes('DEADLINE_EXCEEDED') || err.message.includes('timeout')) {
+    if (msg.includes('DEADLINE_EXCEEDED') || msg.includes('timeout')) {
       throw new Error('AI request timed out. Please retry with shorter input.');
     }
-    throw err;
+    if (msg.includes('503') || msg.includes('high demand')) {
+      throw new Error('Gemini servers are currently experiencing high demand. Please try clicking Generate again in a few seconds.');
+    }
+    throw lastError;
   }
 }
