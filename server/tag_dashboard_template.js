@@ -1,3 +1,10 @@
+/**
+ * tag_dashboard_template.js
+ * Converts the reference Dashboard testcase document into a
+ * docxtemplater-compatible tagged template.
+ * Run once from the project root:
+ *   node server/tag_dashboard_template.js
+ */
 import fs from "fs";
 import path from "path";
 import PizZip from "pizzip";
@@ -12,7 +19,6 @@ let xml = zip.file("word/document.xml").asText();
 console.log("Original XML length:", xml.length);
 
 // 1. Title paragraph
-// Replace document title with {doc_title}
 const titleMatch = xml.match(/<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?(?:ONESTREAM\s+DASHBOARD\s+TASK\s+REVIEW\s+CHECKLIST|(?:ONESTREAM|DASHBOARD\s+TASK\s+REVIEW))(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/i);
 if (titleMatch) {
   const newTitle = '<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:b w:val="1"/><w:sz w:val="36"/><w:u w:val="single"/></w:rPr><w:t>{doc_title}</w:t></w:r></w:p>';
@@ -68,19 +74,15 @@ const t2Start = xml.indexOf("<w:tbl>", t1Start + t1Clean.length);
 const t2End = xml.indexOf("</w:tbl>", t2Start) + 8;
 const t2Orig = xml.substring(t2Start, t2End);
 
-// Table 2 structure:
-// Row 0: Module Header row (<w:tr> with {module_name} across 5 cols)
-// Row 1: Columns header (S.No. | Checklist Item | Yes | No | N/A)
-// Row 2: Category row (A | {category_label} | | | )
-// Row 3: Checklist loop row with {#checklist}{sno} and {na_mark}{/checklist}
-
-const modNameRow = '<w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc><w:tcPr><w:tcW w:w="9072" w:type="dxa"/><w:gridSpan w:val="5"/><w:tcBorders><w:top w:val="single" w:sz="6"/><w:left w:val="single" w:sz="6"/><w:bottom w:val="single" w:sz="6"/><w:right w:val="single" w:sz="6"/></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="D9E2F3"/></w:tcPr><w:p><w:pPr><w:spacing w:before="120" w:after="120"/></w:pPr><w:r><w:rPr><w:b w:val="1"/><w:sz w:val="24"/></w:rPr><w:t>{module_name}</w:t></w:r></w:p></w:tc></w:tr>';
+// Table 2 structure (No blue heading row! Starts directly with columns header):
+// Row 0: Columns header (S.No. | Checklist Item | Yes | No | N/A)
+// Row 1: Category row (A | {category_label} | | | )
+// Row 2: Checklist loop row with {#checklist}{sno} and {na_mark}{/checklist}
 
 const colHeaderRow = '<w:tr w:rsidR="006E5EA5" w:rsidTr="03015A5A"><w:trPr><w:trHeight w:val="300"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="928" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>S. No.</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="6222" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Checklist Item</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="953" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Yes</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1043" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>No</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1108" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>N/A</w:t></w:r></w:p></w:tc></w:tr>';
 
 const categoryRow = '<w:tr w:rsidR="006E5EA5" w:rsidTr="03015A5A"><w:trPr><w:trHeight w:val="300"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="928" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="FFFF00"/><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>A</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="6222" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="FFFF00"/><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b w:val="1"/><w:bCs w:val="1"/></w:rPr><w:t xml:space="preserve"> {category_label} </w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="953" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="FFFF00"/><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p/></w:tc><w:tc><w:tcPr><w:tcW w:w="1043" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="FFFF00"/><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p/></w:tc><w:tc><w:tcPr><w:tcW w:w="1108" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="FFFF00"/><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p/></w:tc></w:tr>';
 
-// Checklist row: docxtemplater row loop with {#checklist}{sno} and {na_mark}{/checklist}
 const checklistRow = '<w:tr w:rsidR="006E5EA5" w:rsidTr="03015A5A"><w:trPr><w:trHeight w:val="300"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="928" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>{#checklist}{sno}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="6222" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Aptos Narrow" w:hAnsi="Aptos Narrow" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:t xml:space="preserve">{parameter}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="953" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>{yes_mark}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1043" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>{no_mark}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1108" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="6" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="6" w:space="0"/></w:tcBorders><w:tcMar><w:left w:w="105" w:type="dxa"/><w:right w:w="105" w:type="dxa"/></w:tcMar></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t>{na_mark}{/checklist}</w:t></w:r></w:p></w:tc></w:tr>';
 
 // Extract table properties & grid from original Table 2
@@ -88,7 +90,6 @@ const tblPrEnd = t2Orig.indexOf("<w:tr");
 const tblHeader = t2Orig.substring(0, tblPrEnd);
 
 const t2Clean = tblHeader
-  + modNameRow
   + colHeaderRow
   + categoryRow
   + checklistRow
@@ -99,7 +100,7 @@ const mOpen = '<w:p><w:r><w:t>{#modules}</w:t></w:r></w:p>';
 const mClose = '<w:p><w:r><w:t>{/modules}</w:t></w:r></w:p>';
 
 xml = xml.substring(0, t2Start) + mOpen + t2Clean + mClose + xml.substring(t2End);
-console.log("+ Table 2 cleanly tagged and wrapped in modules");
+console.log("+ Table 2 cleanly tagged (no blue header row)");
 
 // 8. Remediation file
 const remPat = "Planning Dashboard - RPO Jobs_Remediation.xlsx";
