@@ -36,23 +36,19 @@ Raw Activity Notes:
 ${formData.updates}
 
 STEP 1 - CLASSIFY THE TICKET TYPE
+- DASHBOARD: notes mention "Dashboard", "dashboard updation", "planning dashboard",
+  "RptgGrp_Dashboard", "Forecast reports in workflow (RptgGrp_Dashboard)", or any dashboard workflow/task.
+  If the notes contain "Dashboard" or "(RptgGrp_Dashboard)", classify as DASHBOARD unless the notes
+  explicitly state that only specific individual cube views (e.g. PWRJOB_RPT_15) margins/columns are being updated.
 - CUBE_VIEW: notes mention cube view names, report names (e.g. PWRJOB_RPT_*, FLH_*, RPT_*, CV_*),
   report formatting, margins, data changes, row/column changes, or any OneStream CubeView
   configuration change.
-  IMPORTANT: If the notes mention specific cube view / report names (such as PWRJOB_RPT_15,
-  PWRJOB_RPT_16), OR if "Dashboard" only appears as part of a workflow profile group
-  (e.g., "(RptgGrp_Dashboard)" or "workflow dashboard"), it is STILL a CUBE_VIEW! Do NOT classify as DASHBOARD just
-  because the workflow name or group contains the word "Dashboard".
 - PARAMETER_CHANGE: notes mention OneStream parameter names, workflow
   rule settings, or business-rule parameter values being changed.
 - BOOK: notes mention creating/updating a Book (.xlBook, .xfDoc.xlBook
   files), "Book folder", or "Fixed Assets Review Book" style deliverables.
   This is NOT a cube view, even if it references cube views internally -
   if the notes say "Book" or the file extension is .xlBook, classify BOOK.
-- DASHBOARD: notes describe modifying or creating a OneStream Dashboard artifact itself
-  (e.g., "Planning Dashboard", dashboard maintenance unit, dashboard workspace, dashboard components/adapters).
-  Only classify as DASHBOARD if the ticket is actually about a dashboard interface, NOT when
-  updating cube views that happen to live under a dashboard workflow group.
 If none fit clearly, default to CUBE_VIEW.
 
 STEP 2 - IF CUBE_VIEW, CLASSIFY THE SUB-TYPE (this determines which fixed

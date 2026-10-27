@@ -187,6 +187,7 @@ export default function App() {
                   <span className="os-tag">Flash Reports</span>
                   <span className="os-tag">Parameters</span>
                   <span className="os-tag">Books</span>
+                  <span className="os-tag">Dashboard</span>
                 </div>
               </div>
 
