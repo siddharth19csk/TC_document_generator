@@ -5,7 +5,7 @@ import { generateTestcasesDocument } from './services/apiService.js';
 function validateForm(data) {
   const errors = {};
   if (!data.updates.trim()) {
-    errors.updates = 'Daily Raw Details are required.';
+    errors.updates = 'Testcase Raw Details are required.';
   } else if (data.updates.trim().length < 10) {
     errors.updates = 'Please provide at least 10 characters.';
   }
@@ -152,7 +152,7 @@ export default function App() {
                 OneStream <span style={{ color: 'var(--os-blue)', fontWeight: 500 }}>| Task Review Studio</span>
               </div>
               <div className="os-header-subtitle">
-                Automated Test Case & Release Document Generator
+                Automated Test Case Document Generator
               </div>
             </div>
           </div>
@@ -178,9 +178,9 @@ export default function App() {
                     <polyline points="10 9 9 9 8 9"></polyline>
                   </svg>
                 </div>
-                <h1 className="os-card-title">Daily Document Generator</h1>
+                <h1 className="os-card-title">Testcase Document Generator</h1>
                 <p className="os-card-desc">
-                  Paste your OneStream ticket updates below to generate the formatted Cube View Testcase Review Document.
+                  Paste your OneStream ticket updates below to generate the formatted Testcase Review Document.
                 </p>
                 <div className="os-tags-row">
                   <span className="os-tag">Cube View</span>
@@ -203,7 +203,7 @@ export default function App() {
               )}
 
               <form onSubmit={handleSubmit} noValidate>
-                {/* Field 1: Daily Raw Details */}
+                {/* Field 1: Testcase Raw Details */}
                 <div className="os-form-group">
                   <label htmlFor="updates" className="os-label">
                     <span className="os-label-left">
@@ -213,7 +213,7 @@ export default function App() {
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                       </span>
-                      Daily Raw Details <span className="os-required">*</span>
+                      Testcase Raw Details <span className="os-required">*</span>
                     </span>
                   </label>
                   <textarea
@@ -400,7 +400,7 @@ export default function App() {
         )}
 
         <footer className="os-footer">
-          OneStream Software Integration Suite • Daily Document Automation
+          OneStream Software Integration Suite • Testcase Document Automation
         </footer>
       </main>
     </div>
