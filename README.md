@@ -1,231 +1,332 @@
-# Daily Document Generator
+# Testcase Document Generator
 
-An AI-powered web application that generates structured software test cases from daily team updates, populates a supplied Word (.docx) template, and provides a downloadable document.
+> **OneStream Task Review Studio** — Automated Test Case Document Generator for OneStream changes (Cube Views, Flash Reports, Parameters, Books, and Dashboards).
 
-## Architecture
+🔗 **Live Application URL:** [https://tc-document-generator.onrender.com](https://tc-document-generator.onrender.com)
+
+---
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Folder Structure](#folder-structure)
+3. [File Purpose Reference](#file-purpose-reference)
+4. [End-to-End Workflow](#end-to-end-workflow)
+5. [AI Classification & Fallback Architecture](#ai-classification--fallback-architecture)
+6. [Word Template System](#word-template-system)
+7. [Local Setup & Development](#local-setup--development)
+8. [API Reference](#api-reference)
+9. [Deployment](#deployment)
+
+---
+
+## Overview
+
+The **Testcase Document Generator** converts raw OneStream ticket activity notes (e.g. from ServiceNow changes, JIRA, or email handoffs) into standardized, corporate-ready Microsoft Word (`.docx`) testcase review documents.
+
+### Key Capabilities
+- **Intelligent Ticket Classification**: Automatically determines whether a ticket is a `CUBE_VIEW` (Normal, Flash, or New Build), `PARAMETER_CHANGE`, `BOOK`, or `DASHBOARD`.
+- **Dynamic Template Routing**: Routes requests to the appropriate tagged Word template (`TC_DASHBOARD_TEMPLATE_TAGGED.docx` for dashboards, `TC_CUBEVIEW_TEMPLATE_TAGGED.docx` for cube views/parameters/books).
+- **Mandatory Corporate Checklists**: Populates exact standard checklist questions (8 items for Cube Views, 12 items for Dashboards, etc.) with pre-filled checkboxes.
+- **High-Availability AI Engine**: Features multi-model automatic failover (`gemini-2.5-flash` ➔ `gemini-flash-latest` ➔ `gemini-2.5-flash-lite` ➔ `gemini-2.5-pro`) with exponential backoff against API spikes.
+- **Direct Word Download**: Delivers standardized `.docx` files formatted as `<ReportCode>-<ReportName>-Testcase Document.docx`.
+
+---
+
+## Folder Structure
 
 ```
 daily-document-generator/
-├── client/                     # React + Vite frontend
+│
+├── client/                                # React + Vite Frontend
+│   ├── public/
+│   │   └── favicon.svg                    # Application favicon
 │   ├── src/
-│   │   ├── App.jsx             # Main application component
-│   │   ├── main.jsx            # React entry point
-│   │   ├── index.css           # Global styles
-│   │   └── services/
-│   │       └── apiService.js   # Axios API calls
-│   ├── index.html
-│   ├── vite.config.js
-│   └── package.json
-├── server/                     # Express backend
-│   ├── index.js                # Server entry point
+│   │   ├── services/
+│   │   │   └── apiService.js              # Axios HTTP client communicating with backend
+│   │   ├── App.jsx                        # Main React component (Form, progress state, download)
+│   │   ├── index.css                      # OneStream corporate design system & styling
+│   │   └── main.jsx                       # Vite React application entry point
+│   ├── index.html                         # HTML template shell
+│   ├── package.json                       # Client dependencies & scripts
+│   └── vite.config.js                     # Vite build & dev proxy configuration
+│
+├── server/                                # Express Node.js Backend
+│   ├── generated/                         # Working directory for temp files
 │   ├── routes/
-│   │   ├── health.js           # GET /api/health
-│   │   └── generate.js         # POST /api/generate-testcases
+│   │   ├── generate.js                    # POST /api/generate-testcases route handler
+│   │   └── health.js                      # GET /api/health monitoring endpoint
 │   ├── services/
-│   │   ├── aiService.js        # Google Gemini integration
-│   │   └── documentService.js  # DOCX generation via docxtemplater
+│   │   ├── aiService.js                   # Google Gemini integration, classification & fallbacks
+│   │   └── documentService.js             # Docxtemplater Word rendering engine & template resolver
 │   ├── validators/
-│   │   ├── inputValidator.js   # Zod form validation
-│   │   ├── aiResponseValidator.js  # Zod AI response validation
-│   │   └── configValidator.js  # Startup config check
-│   ├── server.test.js          # Vitest unit tests
-│   └── package.json
-├── templates/
-│   └── Testcase_Generation_Template.docx  # Your supplied Word template
-├── .env.example
-├── .gitignore
-└── README.md
+│   │   ├── aiResponseValidator.js         # Zod schema validation for AI JSON output
+│   │   ├── configValidator.js             # Startup validation for environment variables
+│   │   └── inputValidator.js              # Zod validation for user form input
+│   ├── .env                               # Server environment variables (local)
+│   ├── .env.example                       # Template for environment variables
+│   ├── create_revised_document.js         # Word OpenXML utility for building custom review docs
+│   ├── index.js                           # Express application entry point & middleware
+│   ├── package.json                       # Server dependencies & scripts
+│   ├── server.test.js                     # Vitest automated test suite
+│   ├── tag_dashboard_template.js          # Generator script that tags Dashboard DOCX templates
+│   └── vitest.config.js                   # Vitest testing configuration
+│
+├── templates/                             # Tagged Word (.docx) Templates
+│   ├── RC_TEMPLATE_TAGGED.docx            # Tagged Release Certificate template
+│   ├── TC_CUBEVIEW_TEMPLATE_TAGGED.docx   # Tagged template for Cube Views, Books & Parameters
+│   ├── TC_DASHBOARD_TEMPLATE_TAGGED.docx  # Tagged template for Dashboards (12-item checklist)
+│   ├── TC_Cube_View_Template.docx         # Reference Cube View template
+│   └── Testcase_Generation_Template.docx  # Base reference testcase template
+│
+├── .env.example                           # Root environment sample
+├── .gitignore                             # Git ignore rules for node_modules, .env, and dist
+├── package.json                           # Root monorepo scripts (build, start, dev)
+├── README.md                              # Project documentation (this file)
+├── run.bat                                # Windows batch runner for local startup
+├── run.ps1                                # PowerShell runner for local startup
+└── workflow_n8n.json                      # Reference n8n automation workflow definition
 ```
 
-## Prerequisites
+---
 
-- **Node.js** v18 or later — Download from https://nodejs.org/
-- **npm** v8 or later (included with Node.js)
-- **Google Gemini API Key** — Get one free at https://aistudio.google.com/app/apikey
+## File Purpose Reference
 
-## Setup Instructions
+### Root Directory
+| File | Purpose |
+|---|---|
+| [package.json](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/package.json) | Root package defining monorepo commands (`npm run build`, `npm start`, `npm run dev`) that coordinate both client and server on Render and local machines. |
+| [README.md](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/README.md) | Complete reference guide containing live link, directory structure, workflow diagrams, and component details. |
+| [run.bat](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/run.bat) | Windows batch script to launch both frontend and backend concurrently in local development. |
+| [run.ps1](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/run.ps1) | PowerShell script providing automated environment checks and local server execution. |
+| [workflow_n8n.json](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/workflow_n8n.json) | Exported reference n8n workflow from which the exact prompt logic and JSON transformation rules were mirrored. |
+| [.gitignore](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/.gitignore) | Prevents committing `node_modules`, sensitive `.env` files, build output (`dist/`), and temporary docx files to Git. |
 
-### Step 1: Install Node.js
+---
 
-Download and install Node.js v18+ from https://nodejs.org/
+### Client (`/client`)
+| File | Purpose |
+|---|---|
+| [client/index.html](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/client/index.html) | Root HTML file with web fonts (`Inter`), responsive viewport tags, and metadata for Testcase Document Generator. |
+| [client/vite.config.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/client/vite.config.js) | Vite configuration defining build targets, plugins, and proxy rules forwarding `/api` calls to port `3000` during dev. |
+| [client/src/main.jsx](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/client/src/main.jsx) | React 18 bootstrap file that mounts `<App />` to the DOM root. |
+| [client/src/App.jsx](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/client/src/App.jsx) | Core frontend UI component. Handles form input (Testcase Raw Details, Report Code, Ticket Number, Certified By), validation, multi-stage animated loading feedback, error banners, and direct file download trigger. |
+| [client/src/index.css](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/client/src/index.css) | Custom Vanilla CSS design system styled with OneStream corporate blue palette (`#002D62`, `#0072CE`), subtle card shadows, and micro-animations. |
+| [client/src/services/apiService.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/client/src/services/apiService.js) | Axios API client configured to send multipart/JSON payloads, handle binary blob responses, extract file names from `Content-Disposition`, and trigger browser downloads. |
 
-Verify installation:
-```powershell
-node --version
-npm --version
+---
+
+### Server (`/server`)
+| File | Purpose |
+|---|---|
+| [server/index.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/index.js) | Express entry point. Configures Helmet security headers, CORS policies, rate limiting, JSON body parsers, routes, and production static file serving from `client/dist`. |
+| [server/routes/generate.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/routes/generate.js) | Main API route (`POST /api/generate-testcases`). Orchestrates request validation, calls `aiService.js`, sends AI output to `documentService.js`, and streams the resulting `.docx` file buffer back to the user. |
+| [server/routes/health.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/routes/health.js) | Health monitoring endpoint (`GET /api/health`) used by uptime monitors and Render health checks to verify service availability. |
+| [server/services/aiService.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/services/aiService.js) | Core AI engine. Houses the detailed prompt instructions, ticket type classification logic, response JSON parser, date/remediation file enricher, and resilient multi-model retry/fallback handling. |
+| [server/services/documentService.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/services/documentService.js) | DOCX document engine. Selects the correct template based on ticket type (`TC_DASHBOARD_TEMPLATE_TAGGED.docx` vs `TC_CUBEVIEW_TEMPLATE_TAGGED.docx`), executes docxtemplater row loops, and generates binary document buffers. |
+| [server/validators/inputValidator.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/validators/inputValidator.js) | Zod schema ensuring incoming form data includes valid `updates`, `reportCode`, and `ticketNumber`. |
+| [server/validators/aiResponseValidator.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/validators/aiResponseValidator.js) | Zod schema validating that Gemini returns well-structured JSON containing required fields (`ticket_type`, `tc_cube_view`, `modules`). |
+| [server/validators/configValidator.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/validators/configValidator.js) | Startup validator checking that mandatory environment variables like `GEMINI_API_KEY` are defined before launching the server. |
+| [server/tag_dashboard_template.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/tag_dashboard_template.js) | Standalone utility script that ingests the raw reference Dashboard document and injects docxtemplater tags (`{doc_title}`, `{total_label}`, `{#checklist}{sno}`) with clean OpenXML structure. |
+| [server/create_revised_document.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/create_revised_document.js) | Advanced OpenXML manipulation script used for creating custom review documents and inspect OpenXML table cells. |
+| [server/server.test.js](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/server/server.test.js) | Automated test suite validating input rules, schema constraints, and mock generation. |
+
+---
+
+### Templates (`/templates`)
+| File | Purpose |
+|---|---|
+| [templates/TC_DASHBOARD_TEMPLATE_TAGGED.docx](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/templates/TC_DASHBOARD_TEMPLATE_TAGGED.docx) | Tagged Word template specialized for Dashboard tickets. Features `Total Dashboards` / `Testcases per dashboard` headers and the fixed 12-item Dashboard Updation checklist. |
+| [templates/TC_CUBEVIEW_TEMPLATE_TAGGED.docx](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/templates/TC_CUBEVIEW_TEMPLATE_TAGGED.docx) | Tagged Word template for Cube Views, Flash Reports, Parameters, and Books. Supports dynamic row loops and category labels. |
+| [templates/RC_TEMPLATE_TAGGED.docx](file:///c:/Users/siddharth.chandran/OneDrive%20-%20Quanta%20Services%20Management%20Partnership,%20L.P/Documents/Automation/daily-document-generator/templates/RC_TEMPLATE_TAGGED.docx) | Tagged template for Release Certificate documentation. |
+
+---
+
+## End-to-End Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User (Browser)
+    participant UI as React Client (App.jsx)
+    participant API as Express API (/routes/generate.js)
+    participant AI as AI Engine (aiService.js)
+    participant Gemini as Google Gemini API
+    participant DOC as Document Engine (documentService.js)
+    participant TPL as Word Templates (.docx)
+
+    User->>UI: Enter raw ticket notes, report code & submit
+    UI->>API: POST /api/generate-testcases { updates, reportCode, ticketNumber, certifiedBy }
+    API->>API: Validate inputs (inputValidator.js)
+    API->>AI: generateTestcases(formData)
+    
+    rect rgb(240, 248, 255)
+    Note over AI,Gemini: Step 1: Classification & Fallback Execution
+    AI->>Gemini: Request generation with primary model (gemini-2.5-flash)
+    alt High Demand (503) or Rate Limit
+        AI->>Gemini: Retry with 1.5s delay or fallback to gemini-flash-latest / 2.5-pro
+    end
+    Gemini-->>AI: Structured JSON (ticket_type, modules, checklist)
+    end
+
+    AI->>AI: Enrich data (Date, Remediation filename, Summary counts)
+    AI-->>API: Enriched testcase JSON object
+    
+    rect rgb(255, 250, 240)
+    Note over API,DOC: Step 2: Template Routing & Document Generation
+    API->>DOC: generateDocument(formData, aiData)
+    alt ticket_type === 'DASHBOARD'
+        DOC->>TPL: Load TC_DASHBOARD_TEMPLATE_TAGGED.docx
+    else ticket_type === 'CUBE_VIEW' | 'BOOK' | 'PARAMETER'
+        DOC->>TPL: Load TC_CUBEVIEW_TEMPLATE_TAGGED.docx
+    end
+    DOC->>DOC: Render docxtemplater tags & loop checklist rows
+    DOC-->>API: Return binary DOCX buffer + formatted filename
+    end
+
+    API-->>UI: Send binary stream (Content-Disposition: attachment)
+    UI-->>User: Auto-trigger download of <ReportCode>-<ReportName>-Testcase Document.docx
 ```
 
-### Step 2: Configure Environment Variables
+### Workflow Steps Explained
+1. **User Submission**: The engineer pastes ticket notes (e.g. `CHG0058275 Forecast reports in workflow (RptgGrp_Dashboard)`), specifies Report Code (e.g. `R168`), Ticket Number, and Certified By name.
+2. **Input Validation**: Backend ensures non-empty, sanitized text via Zod before incurring any API overhead.
+3. **AI Classification**: `aiService.js` instructs Gemini to classify the ticket:
+   - `DASHBOARD`: Notes mentioning "Dashboard", "RptgGrp_Dashboard", or dashboard workspace updates.
+   - `CUBE_VIEW`: Notes mentioning specific cube views (e.g., `PWRJOB_RPT_15`), column/row formatting, or margins.
+   - `PARAMETER_CHANGE`: Notes regarding workflow rules or parameter bounds.
+   - `BOOK`: Notes regarding `.xlBook` files or Book directories.
+4. **Resilient AI Execution**: The engine queries Gemini. If Google's API returns a temporary `503 Service Unavailable`, it automatically retries with backoff and switches to backup models.
+5. **Data Enrichment**: The server computes real-world data that LLMs cannot reliably predict (current date, exact remediation workbook filename `<ReportName>_Remediation_MM-DD-YYYY.xlsx`, summary checklist counts).
+6. **Template Routing & XML Assembly**: `documentService.js` routes the enriched data into the matching pre-tagged template, replacing variables and repeating checklist table rows cleanly.
+7. **Delivery**: The browser receives the finished document buffer and triggers an instant download with the standard filename format.
 
-```powershell
-cd daily-document-generator\server
-copy ..\..\.env.example .env
+---
+
+## AI Classification & Fallback Architecture
+
+To guarantee 99.9% availability even during Google Cloud demand spikes, `aiService.js` implements a resilient multi-model fallback chain:
+
+```mermaid
+graph TD
+    Start[User Submits Notes] --> M1[Try: gemini-2.5-flash]
+    M1 -->|Success| Parse[Parse & Enrich JSON]
+    M1 -->|503 High Demand / Timeout| R1[Wait 1.5s & Retry]
+    R1 -->|Success| Parse
+    R1 -->|Fails Again| M2[Fallback: gemini-flash-latest]
+    M2 -->|Success| Parse
+    M2 -->|Fails| M3[Fallback: gemini-2.5-flash-lite]
+    M3 -->|Success| Parse
+    M3 -->|Fails| M4[Fallback: gemini-2.5-pro]
+    M4 -->|Success| Parse
+    M4 -->|All Fail| Err[Clear User Alert with Retry Prompt]
 ```
 
-Edit `server\.env` and add your Gemini API key:
-```
-GEMINI_API_KEY=your_actual_gemini_api_key_here
-GEMINI_MODEL=gemini-1.5-flash
+---
+
+## Word Template System
+
+The templates use `docxtemplater` delimiter syntax (`{variable}`, `{#loop}...{/loop}`) with validated OpenXML tags:
+
+### Summary Table Variables
+| Placeholder | Description | Example |
+|---|---|---|
+| `{doc_title}` | Document header | `ONESTREAM DASHBOARD TASK REVIEW CHECKLIST` |
+| `{project_name}` | Project name | `Quanta - OneStream` |
+| `{reviewer_name}` | Name of reviewer | `Siddharth Chandran` |
+| `{review_date}` | Formatted date | `10/29/2026` |
+| `{status}` | Approval state | `Approved` |
+| `{total_label}` | Summary column label | `Total Dashboards` or `Total Reports` |
+| `{tc_per_label}` | Summary per-item label | `Testcases per dashboard` or `Testcases per Report` |
+| `{total_reports}` | Total count of reports/dashboards | `1` |
+| `{tc_per_report}` | Testcases per item | `12` or `8` |
+| `{total_testcase}` | Total testcase calculation | `12` |
+
+### Checklist Table Looping
+Within Table 2, rows are dynamically generated per module and checklist item:
+- `{#modules}`: Iterates over each distinct report/dashboard.
+- `{#checklist}{sno}`: S. No. for each checklist question (Cell 1).
+- `{parameter}`: Checklist question description (Cell 2).
+- `{yes_mark}`: `☑` (Cell 3).
+- `{no_mark}`: `☐` (Cell 4).
+- `{na_mark}{/checklist}`: `☐` (Cell 5, closes row loop).
+
+---
+
+## Local Setup & Development
+
+### 1. Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **npm**: v8.0.0 or higher
+- **Google Gemini API Key**: From [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+### 2. Environment Setup
+Create `server/.env` with your API credentials:
+```env
 PORT=3000
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
 CORS_ORIGIN=http://localhost:5173
 ```
 
-> **Security**: Never commit your `.env` file. It is excluded by `.gitignore`.
-
-### Step 3: Get a Gemini API Key
-
-1. Visit https://aistudio.google.com/app/apikey
-2. Sign in with your Google account
-3. Click **Create API Key**
-4. Copy the key and paste it as `GEMINI_API_KEY` in your `.env` file
-
-### Step 4: Place the Word Template
-
-The template must be at:
-```
-daily-document-generator\templates\Testcase_Generation_Template.docx
-```
-The template is already included in this project. If you replace it, ensure it uses the same placeholder names (see below).
-
-### Step 5: Install Dependencies
-
-```powershell
-# Install server dependencies
-cd daily-document-generator\server
-npm install
-
-# Install client dependencies
-cd ..\client
-npm install
+### 3. Installation
+From the root directory:
+```bash
+# Install root, server, and client dependencies
+npm run install:all
 ```
 
-### Step 6: Run the Application
-
-**Terminal 1 — Start the backend:**
-```powershell
-cd daily-document-generator\server
+### 4. Running Locally
+Run both backend and frontend concurrently:
+```bash
 npm run dev
 ```
-Server starts at: http://localhost:3000
+- **Frontend**: `http://localhost:5173`
+- **Backend API**: `http://localhost:3000`
 
-**Terminal 2 — Start the frontend:**
-```powershell
-cd daily-document-generator\client
-npm run dev
+---
+
+## API Reference
+
+### Health Check
+```http
+GET /api/health
 ```
-Frontend starts at: http://localhost:5173
-
-Open http://localhost:5173 in your browser.
-
-## AI Model Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model name. Options: `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash-exp` |
-
-The application uses `gemini-1.5-flash` by default, which is fast, free-tier compatible, and capable of handling complex test case generation.
-
-## Word Template Placeholders
-
-The supplied template uses these placeholders (docxtemplater syntax):
-
-| Placeholder | Source |
-|---|---|
-| `{reportCode}` | Form input |
-| `{ticketNumber}` | Form input |
-| `{projectModule}` | Form input |
-| `{generatedDate}` | Auto-generated |
-| `{preparedBy}` | Form input |
-| `{documentVersion}` | Fixed: 1.0 |
-| `{summary}` | Truncated updates |
-| `{aiModel}` | From config |
-| `{objective}` | AI generated |
-| `{scopeAndAssumptions}` | AI generated |
-| `{#testCases}...{/testCases}` | AI generated loop |
-| `{tcId}` | In loop |
-| `{scenario}` | In loop |
-| `{preconditions}` | In loop |
-| `{steps}` | In loop |
-| `{testData}` | In loop |
-| `{expectedResult}` | In loop |
-| `{priority}` | In loop |
-| `{executionNotes}` | AI generated |
-| `{reviewedBy}` | Empty (for manual fill) |
-| `{reviewDate}` | Empty (for manual fill) |
-| `{approvalStatus}` | Fixed: Pending Review |
-
-## Running Tests
-
-```powershell
-cd daily-document-generator\server
-npm test
-```
-
-Tests cover:
-- Form input validation (required fields, size limits)
-- AI response structure validation
-- Missing API key handling
-- Invalid priority rejection
-
-## API Endpoints
-
-### `GET /api/health`
-Returns server health status and configuration.
-
-### `POST /api/generate-testcases`
-Accepts form data, calls Gemini AI, generates and returns a `.docx` file.
-
-**Request body:**
+**Response:**
 ```json
 {
-  "reportCode": "R117",
-  "ticketNumber": "CHG0057554",
-  "projectModule": "User Authentication",
-  "preparedBy": "John Smith",
-  "updates": "Daily team updates and requirements...",
-  "additionalContext": "Additional context..."
+  "status": "ok",
+  "timestamp": "2026-10-29T09:28:35.000Z",
+  "service": "daily-document-generator-server",
+  "geminiConfigured": true
 }
 ```
 
-**Response:** `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+### Generate Document
+```http
+POST /api/generate-testcases
+Content-Type: application/json
+```
+**Request Body:**
+```json
+{
+  "updates": "CHG0058275 Forecast reports in workflow (RptgGrp_Dashboard)",
+  "reportCode": "R168",
+  "ticketNumber": "CHG0058275",
+  "certifiedBy": "Siddharth Chandran"
+}
+```
+**Response:** Binary `.docx` stream with headers:
+```http
+Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+Content-Disposition: attachment; filename="R168-RptgGrp_Dashboard-Testcase Document.docx"
+```
 
-## Troubleshooting
+---
 
-| Problem | Solution |
-|---|---|
-| `GEMINI_API_KEY is not set` | Copy `.env.example` to `server/.env` and add your key |
-| Template not found | Ensure `templates/Testcase_Generation_Template.docx` exists |
-| Port already in use | Change `PORT` in `.env` or kill the process on that port |
-| AI quota exceeded | Wait a minute and retry, or upgrade your Gemini plan |
-| Download fails | Check browser popup/download settings |
+## Deployment
 
-## Oracle Cloud Infrastructure Deployment
-
-### Option 1: VM Instance (Recommended for internal use)
-
-1. Create an OCI Compute instance (Ubuntu 22.04, minimum 2GB RAM)
-2. Open ports 80/443 in Security List
-3. Install Node.js: `curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - && sudo apt install nodejs`
-4. Clone/upload the project to the VM
-5. Install dependencies: `cd server && npm install && cd ../client && npm install`
-6. Build the frontend: `cd client && npm run build`
-7. Serve the `client/dist` folder using the Express server (add static file serving in `index.js`)
-8. Use PM2 for process management: `npm install -g pm2 && pm2 start server/index.js`
-9. Configure Nginx as a reverse proxy
-
-### Option 2: OCI Container Instances
-
-Build a Docker image and deploy to OCI Container Instances or OKE.
-
-### Environment Variables in Production
-
-Set `GEMINI_API_KEY` as an OCI Vault secret or environment variable on the instance. Never bake it into the container image.
-
-## Security Notes
-
-- API key is backend-only — never exposed to the browser
-- Input is validated with Zod before processing
-- Rate limiting: 30 requests per 15 minutes per IP
-- Helmet.js security headers enabled
-- Filenames sanitized before use in HTTP headers
-- No permanent storage of submitted updates
+The application is deployed on **Render** as a full-stack Web Service:
+- **Build Command**: `npm run build` *(installs dependencies and builds Vite client into `client/dist`)*
+- **Start Command**: `npm start` *(starts `server/index.js` which serves both API and static UI)*
+- **Environment Variables**: Set `GEMINI_API_KEY` in the Render Dashboard Environment settings.
+- **Production URL**: [https://tc-document-generator.onrender.com](https://tc-document-generator.onrender.com)
