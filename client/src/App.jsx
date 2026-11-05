@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { generateTestcasesDocument } from './services/apiService.js';
 
 // ——— Form Validation ———
@@ -31,6 +31,71 @@ const STEPS = [
   { id: 'document', label: 'Assembling Test Case Review Document...' },
 ];
 
+const NEAT_PROMPTS = [
+  {
+    title: 'Dashboard Updates (12-Item Checklist)',
+    badge: 'Dashboard',
+    ticket: 'CHG0058275',
+    reportCode: 'RptgGrp_Dashboard',
+    content: `CHG0058275 - Update Executive Forecast Dashboard
+
+Requirement:
+As part of the new requirements, we completed all required changes and successfully validated data in QA. We are now releasing the new version to PROD.
+
+Workflow Context:
+Forecast reports in workflow (RptgGrp_Dashboard)
+
+Artifacts Modified:
+- Dashboard: Planning Dashboard - RPO Jobs
+- Component: Grid_Forecast_Summary
+- Data Adapter: DA_Forecast_JobDetails
+
+Changes Made in Detail:
+1. Created backup of Planning Dashboard as Planning_Dashboard_ORG.
+2. Updated SQL query in DA_Forecast_JobDetails to include revised cost center mappings.
+3. Adjusted grid margins, column widths, and label alignments in Grid_Forecast_Summary.
+4. Validated dashboard navigation and verified zero drill-down errors in QA.`
+  },
+  {
+    title: 'Cube View Changes (8-Item Checklist)',
+    badge: 'Cube View',
+    ticket: 'CHG0059102',
+    reportCode: 'PWRJOB_RPT_15',
+    content: `CHG0059102 - Revenue Summary Cube View Adjustment
+
+Requirement:
+Updated column definitions and row formatting styles for monthly executive reporting. Successfully validated against general ledger in QA.
+
+Artifacts Modified:
+- Cube View: PWRJOB_RPT_15 (Revenue Summary by Business Unit)
+
+Changes Made in Detail:
+1. Created backup of cube view as PWRJOB_RPT_15_ORG.
+2. Modified Column POV definition to dynamically select current month and Prior Year actuals.
+3. Adjusted row formatting style to display negative balances in red parentheses.
+4. Confirmed report render time is under 2 seconds during QA performance testing.`
+  },
+  {
+    title: 'Flash Reports & Parameters',
+    badge: 'Flash Report',
+    ticket: 'CHG0060411',
+    reportCode: 'FLH_BalanceSheet_Summary',
+    content: `CHG0060411 - Flash Balance Sheet & Metric Parameters
+
+Requirement:
+Updated Balance Sheet Flash Report layout and refreshed custom date parameters for the Q4 reporting cycle.
+
+Artifacts Modified:
+- Flash Report: FLH_BalanceSheet_Summary
+- Parameter: Param_ReportQuarter_End
+
+Changes Made in Detail:
+1. Created backup of Flash Report as FLH_BalanceSheet_Summary_ORG.
+2. Updated parameter query string to default dynamically to current fiscal period.
+3. Validated visual alignment and export to PDF in QA.`
+  }
+];
+
 export default function App() {
   const [view, setView] = useState('form'); // 'form' | 'loading' | 'success'
   const [form, setForm] = useState(INITIAL_FORM);
@@ -39,6 +104,40 @@ export default function App() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState(null);
   const [docInfo, setDocInfo] = useState(null); // { blob, filename }
+
+  // Help modal states
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [helpTab, setHelpTab] = useState('pdf'); // default to PDF viewer
+  const [copiedIdx, setCopiedIdx] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isHelpOpen) {
+        setIsHelpOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isHelpOpen]);
+
+  const handleCopyPrompt = useCallback((text, idx) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2500);
+  }, []);
+
+  const handleApplyPrompt = useCallback((promptItem) => {
+    setForm((prev) => ({
+      ...prev,
+      updates: promptItem.content,
+      reportCode: promptItem.reportCode,
+      ticketNumber: promptItem.ticket,
+    }));
+    setFieldErrors({});
+    setIsHelpOpen(false);
+  }, []);
 
   // ——— Field change handler ———
   const handleChange = useCallback((e) => {
@@ -156,10 +255,19 @@ export default function App() {
               </div>
             </div>
           </div>
-          <div className="os-pill-tag">
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00875A', display: 'inline-block' }}></span>
-            OneStream XF Ready
-          </div>
+          <button
+            type="button"
+            className="os-help-btn"
+            onClick={() => setIsHelpOpen(true)}
+            title="Open User Help Guide"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span>Help Guide</span>
+          </button>
         </div>
       </header>
 
@@ -403,6 +511,97 @@ export default function App() {
           OneStream Software Integration Suite • Testcase Document Automation
         </footer>
       </main>
+
+      {/* Help Guide & Prompts Modal Dialog */}
+      {isHelpOpen && (
+        <div className="os-modal-backdrop" onClick={() => setIsHelpOpen(false)}>
+          <div
+            className="os-modal-container"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="os-modal-title"
+          >
+            {/* Modal Header */}
+            <div className="os-modal-header">
+              <div className="os-modal-header-left">
+                <div className="os-modal-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0072CE" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                  </svg>
+                </div>
+                <div>
+                  <h2 id="os-modal-title" className="os-modal-title">User Help & Prompt Guide</h2>
+                  <p className="os-modal-subtitle">Step-by-step navigation, checklist routing, and prompt templates</p>
+                </div>
+              </div>
+
+              <div className="os-modal-header-actions">
+                <div className="os-modal-tab-group">
+                  <button
+                    type="button"
+                    className="os-modal-tab-btn active"
+                    disabled
+                  >
+                    PDF Viewer
+                  </button>
+                </div>
+
+                <a
+                  href="/Help_Document.pdf"
+                  download="OneStream_User_Help_Guide.pdf"
+                  className="os-modal-action-btn"
+                  title="Download Help Guide as PDF"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <span>PDF</span>
+                </a>
+
+                <a
+                  href="/Help_Document.docx"
+                  download="OneStream_Help_Document.docx"
+                  className="os-modal-action-btn"
+                  title="Download Word Document (.docx)"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <span>DOCX</span>
+                </a>
+
+                <button
+                  type="button"
+                  className="os-modal-close-btn"
+                  onClick={() => setIsHelpOpen(false)}
+                  aria-label="Close dialog"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="os-modal-body">
+              <div className="os-pdf-embed-wrapper">
+                <iframe
+                  src="/Help_Document.pdf#toolbar=1&navpanes=0&view=FitH"
+                  title="OneStream User Help Guide PDF"
+                  className="os-pdf-iframe"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
