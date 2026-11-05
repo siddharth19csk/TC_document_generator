@@ -51,6 +51,29 @@ app.use('/api/', limiter);
 app.use('/api/health', healthRouter);
 app.use('/api', generateRouter);
 
+// Serve Help Documentation (PDF and DOCX)
+app.get('/Help_Document.pdf', (req, res) => {
+  const p1 = path.resolve(__dirname, '../client/public/Help_Document.pdf');
+  const p2 = path.resolve(__dirname, '../documentation/Help_Document.pdf');
+  const target = fs.existsSync(p1) ? p1 : (fs.existsSync(p2) ? p2 : null);
+  if (target) {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="Help_Document.pdf"');
+    return res.sendFile(target);
+  }
+  res.status(404).json({ error: 'Help PDF not found.' });
+});
+
+app.get('/Help_Document.docx', (req, res) => {
+  const p1 = path.resolve(__dirname, '../client/public/Help_Document.docx');
+  const p2 = path.resolve(__dirname, '../documentation/Help_Document.docx');
+  const target = fs.existsSync(p1) ? p1 : (fs.existsSync(p2) ? p2 : null);
+  if (target) {
+    return res.download(target, 'OneStream_Help_Document.docx');
+  }
+  res.status(404).json({ error: 'Help DOCX not found.' });
+});
+
 // Static frontend serving if built
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
