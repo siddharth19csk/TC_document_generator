@@ -19,7 +19,7 @@ const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>OneStream Testcase Generator - User Help & Prompt Guide</title>
+  <title>OneStream Testcase Generator - User Help Guide</title>
   <style>
     @page {
       margin: 1.8cm 1.5cm;
@@ -116,50 +116,6 @@ const htmlContent = `<!DOCTYPE html>
       color: #475569;
       font-style: italic;
     }
-    .code-box {
-      background: #F8FAFC;
-      border: 1px solid #CBD5E1;
-      border-left: 4px solid #0072CE;
-      border-radius: 4px;
-      padding: 10px 14px;
-      font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 9pt;
-      line-height: 1.45;
-      white-space: pre-wrap;
-      word-break: break-word;
-      margin: 10px 0 16px 0;
-      page-break-inside: avoid;
-    }
-    .note-box {
-      background: #EFF6FF;
-      border: 1px solid #BFDBFE;
-      border-radius: 6px;
-      padding: 10px 14px;
-      font-size: 9.5pt;
-      color: #1E3A8A;
-      margin: 12px 0;
-      page-break-inside: avoid;
-    }
-    .table-clean {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 12px 0 16px 0;
-      font-size: 9pt;
-      page-break-inside: avoid;
-    }
-    .table-clean th {
-      background: #F1F5F9;
-      color: #0F172A;
-      font-weight: 600;
-      text-align: left;
-      padding: 8px 10px;
-      border: 1px solid #CBD5E1;
-    }
-    .table-clean td {
-      padding: 8px 10px;
-      border: 1px solid #E2E8F0;
-      vertical-align: top;
-    }
     .page-break {
       page-break-before: always;
     }
@@ -171,7 +127,7 @@ const htmlContent = `<!DOCTYPE html>
   <div class="header-banner">
     <div>
       <h1 class="header-title">OneStream Testcase Review Studio</h1>
-      <div class="header-subtitle">User Guide, Form Navigation & Prompt Crafting Manual</div>
+      <div class="header-subtitle">User Guide & Form Navigation Manual</div>
     </div>
     <div class="header-badge">OneStream XF Ready</div>
   </div>
@@ -191,103 +147,23 @@ const htmlContent = `<!DOCTYPE html>
 
   <div class="screenshot-card">
     <img src="data:image/png;base64,${img1Base64}" alt="Step 1: Landing Interface Overview" />
-    <div class="screenshot-caption">Figure 1: Application homepage showing required and optional input fields.</div>
+    <div class="screenshot-caption">Figure 1: Application homepage showing required input fields.</div>
   </div>
 
   <h3>Field Descriptions:</h3>
   <ul>
     <li><strong>Testcase Raw Details (Required):</strong> Paste the complete ServiceNow change/incident description, developer notes, or prompt detailing modified OneStream artifacts and workflow changes. Minimum 10 characters.</li>
     <li><strong>Report Code (Required):</strong> Enter the primary report or artifact code (e.g. <code>R117</code>, <code>PWRJOB_RPT_15</code>, or <code>RPT_FORECAST</code>).</li>
-    <li><strong>Certified By (Optional):</strong> Developer or reviewer name (defaults to <code>Sid</code> / reviewer name if provided).</li>
+    <li><strong>Certified By (Required):</strong> Developer name (e.g. Siddharth Chandran). Mandatory – stamped on the certification block of the generated document.</li>
     <li><strong>Ticket Number (Required):</strong> ServiceNow tracking ticket (e.g. <code>CHG0058275</code>, <code>INC0158214</code>, or <code>RITM0098421</code>).</li>
   </ul>
 
-  <div class="page-break"></div>
-
-  <h2>3. Crafting a "Neat Prompt"</h2>
-  <p>
-    The AI model determines the appropriate document checklist format based on the keywords in your text:
-  </p>
-  <ul>
-    <li><strong>Dashboard Checklist (12 Items):</strong> Triggered when the prompt mentions <code>Dashboard</code> or <code>RptgGrp_Dashboard</code>.</li>
-    <li><strong>Cube View Checklist (8 Items):</strong> Triggered when reports or cube views (e.g. <code>PWRJOB_RPT_*</code>) are specified without a dashboard workflow.</li>
-  </ul>
-
   <div class="screenshot-card">
-    <img src="data:image/png;base64,${img2Base64}" alt="Step 2: Neat Prompt Example" />
-    <div class="screenshot-caption">Figure 2: Form populated with a structured Neat Prompt for a Dashboard change request.</div>
+    <img src="data:image/png;base64,${img2Base64}" alt="Step 2: Form Populated Example" />
+    <div class="screenshot-caption">Figure 2: Form populated with ticket details and certified reviewer information.</div>
   </div>
 
-  <h3>Standard Prompt Anatomy</h3>
-  <div class="code-box">[Ticket Number] - [Brief Title]
-
-Requirement:
-[One-sentence description of the change request and validation status]
-
-Workflow Context:
-[Workflow group name, e.g., Forecast reports in workflow (RptgGrp_Dashboard)]
-
-Artifacts Modified:
-- [Artifact Type]: [Artifact Name]
-
-Changes Made in Detail:
-1. Created backup of existing artifact as _ORG.
-2. [Specific query, column, margin, or layout adjustment].
-3. Validated and tested in QA; ready for PROD release.</div>
-
-  <h2>4. Ready-to-Use Prompt Templates</h2>
-
-  <h3>Template A: Dashboard Changes (Routes to 12-Item Checklist)</h3>
-  <div class="code-box">CHG0058275 - Update Executive Forecast Dashboard
-
-Requirement:
-As part of the new requirements, we completed all required changes and successfully validated data in QA. We are now releasing the new version to PROD.
-
-Workflow Context:
-Forecast reports in workflow (RptgGrp_Dashboard)
-
-Artifacts Modified:
-- Dashboard: Planning Dashboard - RPO Jobs
-- Component: Grid_Forecast_Summary
-- Data Adapter: DA_Forecast_JobDetails
-
-Changes Made in Detail:
-1. Created backup of Planning Dashboard as Planning_Dashboard_ORG.
-2. Updated SQL query in DA_Forecast_JobDetails to include revised cost center mappings.
-3. Adjusted grid margins, column widths, and label alignments in Grid_Forecast_Summary.
-4. Validated dashboard navigation and verified zero drill-down errors in QA.</div>
-
   <div class="page-break"></div>
-
-  <h3>Template B: Cube View Modifications (Routes to 8-Item Checklist)</h3>
-  <div class="code-box">CHG0059102 - Revenue Summary Cube View Adjustment
-
-Requirement:
-Updated column definitions and row formatting styles for monthly executive reporting. Successfully validated against general ledger in QA.
-
-Artifacts Modified:
-- Cube View: PWRJOB_RPT_15 (Revenue Summary by Business Unit)
-
-Changes Made in Detail:
-1. Created backup of cube view as PWRJOB_RPT_15_ORG.
-2. Modified Column POV definition to dynamically select current month and Prior Year actuals.
-3. Adjusted row formatting style to display negative balances in red parentheses.
-4. Confirmed report render time is under 2 seconds during QA performance testing.</div>
-
-  <h3>Template C: Flash Reports & Parameters</h3>
-  <div class="code-box">CHG0060411 - Flash Balance Sheet & Metric Parameters
-
-Requirement:
-Updated Balance Sheet Flash Report layout and refreshed custom date parameters for the Q4 reporting cycle.
-
-Artifacts Modified:
-- Flash Report: FLH_BalanceSheet_Summary
-- Parameter: Param_ReportQuarter_End
-
-Changes Made in Detail:
-1. Created backup of Flash Report as FLH_BalanceSheet_Summary_ORG.
-2. Updated parameter query string to default dynamically to current fiscal period.
-3. Validated visual alignment and export to PDF in QA.</div>
 
   <h2>5. Generating & Downloading</h2>
   <div class="screenshot-card">
@@ -300,38 +176,6 @@ Changes Made in Detail:
     <li>Wait 3-5 seconds while the document is synthesized and structured into tables.</li>
     <li>Click <strong>Download Document</strong> to receive your standard corporate Word file (.docx).</li>
   </ol>
-
-  <h2>6. Troubleshooting & FAQ</h2>
-  <table class="table-clean">
-    <thead>
-      <tr>
-        <th style="width: 30%;">Issue</th>
-        <th style="width: 35%;">Probable Cause</th>
-        <th style="width: 35%;">Recommended Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>Cube View checklist generated instead of Dashboard</strong></td>
-        <td>The prompt omitted the word "Dashboard" or workflow tag.</td>
-        <td>Add <code>(RptgGrp_Dashboard)</code> or explicitly name the dashboard object.</td>
-      </tr>
-      <tr>
-        <td><strong>503 Service Unavailable / Spikes in demand</strong></td>
-        <td>Temporary cloud API rate limit on Google Gemini.</td>
-        <td>Wait 10-15 seconds and re-click Generate.</td>
-      </tr>
-      <tr>
-        <td><strong>Reviewer name missing</strong></td>
-        <td>"Certified By" input field was left blank.</td>
-        <td>Specify your name in the "Certified By" field prior to generation.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="note-box">
-    <strong>Need Assistance?</strong> For questions or custom template tags, contact the OneStream CoE or System Administrator.
-  </div>
 
 </body>
 </html>`;
@@ -366,4 +210,3 @@ try {
   console.error('PDF Generation failed:', err.message);
   process.exit(1);
 }
-

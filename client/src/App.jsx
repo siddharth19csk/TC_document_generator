@@ -12,6 +12,9 @@ function validateForm(data) {
   if (!data.reportCode.trim()) {
     errors.reportCode = 'Report Code is required.';
   }
+  if (!data.certifiedBy.trim()) {
+    errors.certifiedBy = 'Certified By is required.';
+  }
   if (!data.ticketNumber.trim()) {
     errors.ticketNumber = 'Ticket Number is required.';
   }
@@ -31,71 +34,6 @@ const STEPS = [
   { id: 'document', label: 'Assembling Test Case Review Document...' },
 ];
 
-const NEAT_PROMPTS = [
-  {
-    title: 'Dashboard Updates (12-Item Checklist)',
-    badge: 'Dashboard',
-    ticket: 'CHG0058275',
-    reportCode: 'RptgGrp_Dashboard',
-    content: `CHG0058275 - Update Executive Forecast Dashboard
-
-Requirement:
-As part of the new requirements, we completed all required changes and successfully validated data in QA. We are now releasing the new version to PROD.
-
-Workflow Context:
-Forecast reports in workflow (RptgGrp_Dashboard)
-
-Artifacts Modified:
-- Dashboard: Planning Dashboard - RPO Jobs
-- Component: Grid_Forecast_Summary
-- Data Adapter: DA_Forecast_JobDetails
-
-Changes Made in Detail:
-1. Created backup of Planning Dashboard as Planning_Dashboard_ORG.
-2. Updated SQL query in DA_Forecast_JobDetails to include revised cost center mappings.
-3. Adjusted grid margins, column widths, and label alignments in Grid_Forecast_Summary.
-4. Validated dashboard navigation and verified zero drill-down errors in QA.`
-  },
-  {
-    title: 'Cube View Changes (8-Item Checklist)',
-    badge: 'Cube View',
-    ticket: 'CHG0059102',
-    reportCode: 'PWRJOB_RPT_15',
-    content: `CHG0059102 - Revenue Summary Cube View Adjustment
-
-Requirement:
-Updated column definitions and row formatting styles for monthly executive reporting. Successfully validated against general ledger in QA.
-
-Artifacts Modified:
-- Cube View: PWRJOB_RPT_15 (Revenue Summary by Business Unit)
-
-Changes Made in Detail:
-1. Created backup of cube view as PWRJOB_RPT_15_ORG.
-2. Modified Column POV definition to dynamically select current month and Prior Year actuals.
-3. Adjusted row formatting style to display negative balances in red parentheses.
-4. Confirmed report render time is under 2 seconds during QA performance testing.`
-  },
-  {
-    title: 'Flash Reports & Parameters',
-    badge: 'Flash Report',
-    ticket: 'CHG0060411',
-    reportCode: 'FLH_BalanceSheet_Summary',
-    content: `CHG0060411 - Flash Balance Sheet & Metric Parameters
-
-Requirement:
-Updated Balance Sheet Flash Report layout and refreshed custom date parameters for the Q4 reporting cycle.
-
-Artifacts Modified:
-- Flash Report: FLH_BalanceSheet_Summary
-- Parameter: Param_ReportQuarter_End
-
-Changes Made in Detail:
-1. Created backup of Flash Report as FLH_BalanceSheet_Summary_ORG.
-2. Updated parameter query string to default dynamically to current fiscal period.
-3. Validated visual alignment and export to PDF in QA.`
-  }
-];
-
 export default function App() {
   const [view, setView] = useState('form'); // 'form' | 'loading' | 'success'
   const [form, setForm] = useState(INITIAL_FORM);
@@ -107,8 +45,6 @@ export default function App() {
 
   // Help modal states
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [helpTab, setHelpTab] = useState('pdf'); // default to PDF viewer
-  const [copiedIdx, setCopiedIdx] = useState(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -119,25 +55,6 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isHelpOpen]);
-
-  const handleCopyPrompt = useCallback((text, idx) => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-    }
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 2500);
-  }, []);
-
-  const handleApplyPrompt = useCallback((promptItem) => {
-    setForm((prev) => ({
-      ...prev,
-      updates: promptItem.content,
-      reportCode: promptItem.reportCode,
-      ticketNumber: promptItem.ticket,
-    }));
-    setFieldErrors({});
-    setIsHelpOpen(false);
-  }, []);
 
   // ——— Field change handler ———
   const handleChange = useCallback((e) => {
@@ -383,20 +300,25 @@ export default function App() {
                           <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                       </span>
-                      Certified By
+                      Certified By <span className="os-required">*</span>
                     </span>
-                    <span className="os-optional">Reviewer / Developer</span>
+                    <span className="os-optional">Developer Name</span>
                   </label>
                   <input
                     type="text"
                     id="certifiedBy"
                     name="certifiedBy"
-                    className="os-input"
+                    className={`os-input ${fieldErrors.certifiedBy ? 'error' : ''}`}
                     placeholder="e.g. Siddharth Chandran"
                     value={form.certifiedBy}
                     onChange={handleChange}
                     onBlur={handleBlur}
                   />
+                  {fieldErrors.certifiedBy && (
+                    <div className="os-field-error">
+                      <span>⚠</span> {fieldErrors.certifiedBy}
+                    </div>
+                  )}
                 </div>
 
                 {/* Field 4: Ticket Number */}
@@ -534,8 +456,8 @@ export default function App() {
                   </svg>
                 </div>
                 <div>
-                  <h2 id="os-modal-title" className="os-modal-title">User Help & Prompt Guide</h2>
-                  <p className="os-modal-subtitle">Step-by-step navigation, checklist routing, and prompt templates</p>
+                  <h2 id="os-modal-title" className="os-modal-title">User Help Guide</h2>
+                  <p className="os-modal-subtitle">Step-by-step navigation and checklist routing</p>
                 </div>
               </div>
 

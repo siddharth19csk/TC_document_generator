@@ -3,7 +3,7 @@ import { z } from 'zod';
 const FormSchema = z.object({
   reportCode: z.string().min(1, 'Report Code is required').max(100),
   ticketNumber: z.string().min(1, 'Ticket Number is required').max(100),
-  certifiedBy: z.string().max(200).optional().default(''),
+  certifiedBy: z.string().min(1, 'Developer name (Certified By) is required').max(200),
   preparedBy: z.string().max(200).optional().default(''),
   projectModule: z.string().max(200).optional().default(''),
   updates: z.string().min(10, 'Daily Raw Details must be at least 10 characters').max(50000),
@@ -12,7 +12,7 @@ const FormSchema = z.object({
   status: z.string().max(50).optional().default('Approved'),
 }).transform((data) => ({
   ...data,
-  certifiedBy: data.certifiedBy || data.preparedBy || 'QA Reviewer',
+  certifiedBy: data.certifiedBy,
   preparedBy: data.certifiedBy || data.preparedBy || 'QA Reviewer',
   projectModule: data.projectModule || data.reportCode || 'Cube View',
 }));
