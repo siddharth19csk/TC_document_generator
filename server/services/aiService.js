@@ -82,7 +82,7 @@ STEP 3 - BUILD THE "rc" OBJECT (always populate this, regardless of ticket_type)
 STEP 4 - IF ticket_type IS CUBE_VIEW, BUILD "tc_cube_view" USING THE
 CHECKLIST THAT MATCHES THE SUB-TYPE YOU DETECTED IN STEP 2:
 
---- IF SUB-TYPE = NORMAL, use these exact 8 questions per module: ---
+--- IF SUB-TYPE = NORMAL, use these exact 9 questions per module: ---
 {"sno":"1","parameter":"Check the backup of the cube view is created as _ORG"}
 {"sno":"2","parameter":"Validate that the changes made are reflected in the cube view"}
 {"sno":"3","parameter":"Verify that both PDF and Excel format of the report execute properly"}
@@ -91,6 +91,7 @@ CHECKLIST THAT MATCHES THE SUB-TYPE YOU DETECTED IN STEP 2:
 {"sno":"6","parameter":"Verify that there is no error occur while running the cube view"}
 {"sno":"7","parameter":"Validate all the customers are added by checking the sample QV"}
 {"sno":"8","parameter":"Check Remediation files are created with all the screenshots of changes made"}
+{"sno":"9","parameter":"Check whether the time taken to run the report are less than 2 mins"}
 
 --- IF SUB-TYPE = FLASH, use these exact 8 questions per module: ---
 {"sno":"1","parameter":"Verify that there is no error occur while running the cube view"}
@@ -140,7 +141,7 @@ failing or not applying.
 --- IF ticket_type = CUBE_VIEW, sub-type = NORMAL ---
 doc_title: "ONESTREAM CUBEVIEW TASK REVIEW CHECKLIST"
 category_label: "Cube View Configurations"
-8 questions per module (use exact wording above)
+9 questions per module (use exact wording above)
 
 --- IF ticket_type = CUBE_VIEW, sub-type = FLASH ---
 doc_title: "ONESTREAM FLASH CUBEVIEW TASK REVIEW CHECKLIST"
@@ -337,11 +338,39 @@ function parseAndEnrich(rawText, formData) {
     parsed.tc_cube_view.total_label = typeLabels[parsed.ticket_type] || 'Total Reports';
     parsed.tc_cube_view.tc_per_label = typePerLabels[parsed.ticket_type] || 'Testcases per Report';
 
+    // Ensure 9th row for standard Cube View checklists
+    if (Array.isArray(parsed.tc_cube_view.modules)) {
+      const isNormalCubeView = parsed.ticket_type === 'CUBE_VIEW' &&
+        (!parsed.tc_cube_view.doc_title || parsed.tc_cube_view.doc_title.includes('CUBEVIEW TASK REVIEW CHECKLIST')) &&
+        !parsed.tc_cube_view.doc_title?.includes('FLASH');
+
+      if (isNormalCubeView) {
+        for (const mod of parsed.tc_cube_view.modules) {
+          if (!Array.isArray(mod.checklist)) continue;
+          const has9th = mod.checklist.some(item =>
+            item.parameter && item.parameter.toLowerCase().includes('time taken to run the report')
+          );
+          if (!has9th) {
+            mod.checklist.push({
+              sno: String(mod.checklist.length + 1),
+              parameter: 'Check whether the time taken to run the report are less than 2 mins',
+              yes_mark: '\u2611',
+              no_mark: '\u2610',
+              na_mark: '\u2610'
+            });
+          }
+          mod.checklist.forEach((item, idx) => {
+            item.sno = String(idx + 1);
+          });
+        }
+      }
+    }
+
     // Summary table numbers
     const modCount = Array.isArray(parsed.tc_cube_view.modules) ? parsed.tc_cube_view.modules.length : 0;
     const perReport = (modCount > 0 && Array.isArray(parsed.tc_cube_view.modules[0].checklist) && parsed.tc_cube_view.modules[0].checklist.length > 0)
       ? parsed.tc_cube_view.modules[0].checklist.length
-      : 8;
+      : (parsed.ticket_type === 'CUBE_VIEW' ? 9 : 8);
     parsed.tc_cube_view.total_reports = modCount || 2;
     parsed.tc_cube_view.tc_per_report = perReport;
     parsed.tc_cube_view.total_testcase = parsed.tc_cube_view.total_reports * perReport;
