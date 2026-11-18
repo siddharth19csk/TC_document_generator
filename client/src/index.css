@@ -622,18 +622,31 @@ body {
   transform: translateY(-1px);
 }
 
+.os-help-btn:focus,
+.os-help-btn:focus-visible {
+  outline: none;
+  border-color: var(--os-blue);
+  box-shadow: 0 0 0 2px rgba(0, 114, 206, 0.25);
+}
+
 /* === Help Modal Dialog === */
 .os-modal-backdrop {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 26, 56, 0.65);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
+  box-sizing: border-box;
   animation: osFadeIn 0.2s ease-out;
 }
 
@@ -648,6 +661,8 @@ body {
   flex-direction: column;
   box-shadow: 0 24px 60px rgba(0, 26, 56, 0.35), 0 0 0 1px rgba(0, 45, 98, 0.1);
   overflow: hidden;
+  position: relative;
+  z-index: 100000;
   animation: osScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
