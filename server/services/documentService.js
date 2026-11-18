@@ -106,7 +106,7 @@ export async function generateDocument(formData, aiData) {
     ? tcData.modules[0].checklist.length
     : 0;
 
-  const perReport = Number(tcData.tc_per_report) || firstModChecklistCount || 8;
+  const perReport = Number(tcData.tc_per_report) || firstModChecklistCount || (ticketType === 'CUBE_VIEW' ? 9 : 8);
   const totalReports = Number(tcData.total_reports) || (modCount > 0 ? modCount : 2);
   const totalTestcase = Number(tcData.total_testcase) || (totalReports * perReport);
 
