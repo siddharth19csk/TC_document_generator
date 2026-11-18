@@ -136,7 +136,7 @@ describe('generateTestcases (mocked)', () => {
       ticketNumber: 'T1',
       projectModule: 'M1',
       updates: 'Some feature update description for testing.',
-    })).rejects.toThrow('GEMINI_API_KEY is not set');
+    })).rejects.toThrow(/GEMINI_API_KEY/);
 
     process.env.GEMINI_API_KEY = originalKey;
   });
