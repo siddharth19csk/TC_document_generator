@@ -115,19 +115,19 @@ function renderDocx(templatePath, data) {
       if (!match.includes('SEV_SHD_PLACEHOLDER')) return match;
       if (/Critical/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'FF0000') // Red
-          .replace(/SEV_COLOR_PLACEHOLDER/g, 'FFFFFF'); // White text
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFC7CE') // Light Red
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
       } else if (/High/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFA500') // Orange
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFC7CE') // Light Red
           .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
       } else if (/Medium/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFFF00') // Yellow
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'F8EE7E') // Light Yellow (matching user's image)
           .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
       } else if (/Low/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, '92D050') // Green
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'C6EFCE') // Light Green
           .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
       } else {
         return match
