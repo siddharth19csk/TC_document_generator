@@ -133,56 +133,64 @@ and the checklist content change):
   ]
 }
 
-For each checklist item, add "yes_mark", "no_mark", "na_mark" fields:
+For each checklist item, add "yes_mark", "no_mark", "na_mark" and "severity" fields:
 exactly one should be \\u2611 (checked), the other two \\u2610. Default to
 Yes/checked unless the notes explicitly describe that specific check
 failing or not applying.
+The "severity" field must be one of: "Critical", "High", "Medium", or "Low"
+following the exact severity lists specified below.
 
 --- IF ticket_type = CUBE_VIEW, sub-type = NORMAL ---
 doc_title: "ONESTREAM CUBEVIEW TASK REVIEW CHECKLIST"
 category_label: "Cube View Configurations"
-9 questions per module (use exact wording above)
+9 questions per module with severities:
+1 - High, 2 - Medium, 3 - High, 4 - High, 5 - High, 6 - Medium, 7 - High, 8 - Medium, 9 - High
 
 --- IF ticket_type = CUBE_VIEW, sub-type = FLASH ---
 doc_title: "ONESTREAM FLASH CUBEVIEW TASK REVIEW CHECKLIST"
 category_label: "Flash Cube View Configurations"
-8 questions per module (use exact wording above)
+8 questions per module with severities:
+1 - High, 2 - Medium, 3 - High, 4 - High, 5 - High, 6 - High, 7 - High, 8 - Medium
 
 --- IF ticket_type = CUBE_VIEW, sub-type = NEW_BUILD ---
 doc_title: "ONESTREAM CUBEVIEW TASK REVIEW CHECKLIST"
 category_label: "Cube View Configurations"
-9 questions per module (use exact wording above)
+9 questions per module with severities:
+1 - High, 2 - Medium, 3 - High, 4 - Critical, 5 - High, 6 - High, 7 - Medium, 8 - High, 9 - High
 
 --- IF ticket_type = PARAMETER_CHANGE ---
 doc_title: "ONESTREAM PARAMETER TASK REVIEW CHECKLIST"
 category_label: "Parameter Configurations"
 module_name = the parameter name changed (one module per parameter)
-4 questions per module:
-{"sno":"1","parameter":"Verify that the requested parameter is created and appeared in QPM Parameter list in Workspace."}
-{"sno":"2","parameter":"Validate that the parameter update done correctly and saved properly"}
-{"sno":"3","parameter":"Verify that the parameter works correctly across any sample reports"}
-{"sno":"4","parameter":"Validate that the Default value of parameter is set based on the requirement"}
+4 questions per module with severities:
+1 - High, 2 - High, 3 - High, 4 - Critical
+{"sno":"1","parameter":"Verify that the requested parameter is created and appeared in QPM Parameter list in Workspace.","severity":"High"}
+{"sno":"2","parameter":"Validate that the parameter update done correctly and saved properly","severity":"High"}
+{"sno":"3","parameter":"Verify that the parameter works correctly across any sample reports","severity":"High"}
+{"sno":"4","parameter":"Validate that the Default value of parameter is set based on the requirement","severity":"Critical"}
 
 --- IF ticket_type = BOOK ---
 doc_title: "ONESTREAM BOOK TASK REVIEW CHECKLIST"
 category_label: "Book Configurations"
 module_name = the book file name changed (one module per book)
-9 questions per module:
-{"sno":"1","parameter":"Verify that a user has access for Book and File explorer"}
-{"sno":"2","parameter":"Validate the Loop, change parameter used for the respective book created/updated"}
-{"sno":"3","parameter":"Verify whether all the needed parameters used in the Cube view are included in the book"}
-{"sno":"4","parameter":"Verify whether the Cube View component used is correct"}
-{"sno":"5","parameter":"Verify the Books got saved under the respective Book folder with correct format(pdf, xl, zip)"}
-{"sno":"6","parameter":"Validate the Output name for Excel formatted book by running it."}
-{"sno":"7","parameter":"Validate the Report Header/Footer of the PDF format book by checking the Entity/Region name"}
-{"sno":"8","parameter":"Validate the Flash Books PDF format to fit into one page"}
-{"sno":"9","parameter":"Verify whether the Maintenance group is set to Administrators. If not, check with the security group access"}
+9 questions per module with severities:
+1 - High, 2 - Medium, 3 - High, 4 - Critical, 5 - High, 6 - High, 7 - Medium, 8 - High, 9 - High
+{"sno":"1","parameter":"Verify that a user has access for Book and File explorer","severity":"High"}
+{"sno":"2","parameter":"Validate the Loop, change parameter used for the respective book created/updated","severity":"Medium"}
+{"sno":"3","parameter":"Verify whether all the needed parameters used in the Cube view are included in the book","severity":"High"}
+{"sno":"4","parameter":"Verify whether the Cube View component used is correct","severity":"Critical"}
+{"sno":"5","parameter":"Verify the Books got saved under the respective Book folder with correct format(pdf, xl, zip)","severity":"High"}
+{"sno":"6","parameter":"Validate the Output name for Excel formatted book by running it.","severity":"High"}
+{"sno":"7","parameter":"Validate the Report Header/Footer of the PDF format book by checking the Entity/Region name","severity":"Medium"}
+{"sno":"8","parameter":"Validate the Flash Books PDF format to fit into one page","severity":"High"}
+{"sno":"9","parameter":"Verify whether the Maintenance group is set to Administrators. If not, check with the security group access","severity":"High"}
 
 --- IF ticket_type = DASHBOARD ---
 doc_title: "ONESTREAM DASHBOARD TASK REVIEW CHECKLIST"
 category_label: "Dashboard Updation"
 module_name = the dashboard name mentioned (one module per dashboard)
-12 questions per module:
+12 questions per module with severities:
+1 - Critical, 2 - Medium, 3 - High, 4 - High, 5 - High, 6 - High, 7 - Medium, 8 - High, 9 - High, 10 - Medium, 11 - High, 12 - Medium
 {"sno":"1","parameter":"Verify that the dashboard is accessible and loads without errors"}
 {"sno":"2","parameter":"Validate that the dashboard layout and design match the requirements"}
 {"sno":"3","parameter":"Verify that all widgets/components on the dashboard display correct data"}
@@ -212,6 +220,51 @@ Return ONLY a single raw JSON object with this exact top-level shape:
 Do not add markdown code fences, backticks, or any explanatory text before
 or after the JSON. Output must be valid, parseable JSON.`;
 }
+
+const SEVERITY_RULES = {
+  BOOK: {
+    1: 'High',
+    2: 'Medium',
+    3: 'High',
+    4: 'Critical',
+    5: 'High',
+    6: 'High',
+    7: 'Medium',
+    8: 'High',
+    9: 'High',
+  },
+  PARAMETER_CHANGE: {
+    1: 'High',
+    2: 'High',
+    3: 'High',
+    4: 'Critical',
+  },
+  CUBE_VIEW: {
+    1: 'High',
+    2: 'Medium',
+    3: 'High',
+    4: 'High',
+    5: 'High',
+    6: 'Medium',
+    7: 'High',
+    8: 'Medium',
+    9: 'High',
+  },
+  DASHBOARD: {
+    1: 'Critical',
+    2: 'Medium',
+    3: 'High',
+    4: 'High',
+    5: 'High',
+    6: 'High',
+    7: 'Medium',
+    8: 'High',
+    9: 'High',
+    10: 'Medium',
+    11: 'High',
+    12: 'Medium',
+  },
+};
 
 // ============================================================
 // Parser — mirrors "Code in JavaScript2" from n8n exactly
@@ -354,6 +407,7 @@ function parseAndEnrich(rawText, formData) {
             mod.checklist.push({
               sno: String(mod.checklist.length + 1),
               parameter: 'Check whether the time taken to run the report are less than 2 mins',
+              severity: 'High',
               yes_mark: '\u2611',
               no_mark: '\u2610',
               na_mark: '\u2610'
@@ -363,6 +417,21 @@ function parseAndEnrich(rawText, formData) {
             item.sno = String(idx + 1);
           });
         }
+      }
+
+      // Enforce deterministic severity mapping across all modules and checklist items
+      const ruleMap = SEVERITY_RULES[parsed.ticket_type] || SEVERITY_RULES.CUBE_VIEW;
+      for (const mod of parsed.tc_cube_view.modules) {
+        if (!Array.isArray(mod.checklist)) continue;
+        mod.checklist.forEach((item, idx) => {
+          const snoNum = Number(item.sno) || (idx + 1);
+          let sev = item.severity || ruleMap[snoNum] || 'High';
+          if (/cric?tical/i.test(sev)) sev = 'Critical';
+          else if (/high/i.test(sev)) sev = 'High';
+          else if (/med/i.test(sev)) sev = 'Medium';
+          else if (/low/i.test(sev)) sev = 'Low';
+          item.severity = sev;
+        });
       }
     }
 
