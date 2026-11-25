@@ -51,6 +51,51 @@ function resolveRCTemplate() {
   return null; // RC is optional — TC-only mode if not found
 }
 
+const SEVERITY_RULES = {
+  BOOK: {
+    1: 'High',
+    2: 'Medium',
+    3: 'High',
+    4: 'Critical',
+    5: 'High',
+    6: 'High',
+    7: 'Medium',
+    8: 'High',
+    9: 'High',
+  },
+  PARAMETER_CHANGE: {
+    1: 'High',
+    2: 'High',
+    3: 'High',
+    4: 'Critical',
+  },
+  CUBE_VIEW: {
+    1: 'High',
+    2: 'Medium',
+    3: 'High',
+    4: 'High',
+    5: 'High',
+    6: 'Medium',
+    7: 'High',
+    8: 'Medium',
+    9: 'High',
+  },
+  DASHBOARD: {
+    1: 'Critical',
+    2: 'Medium',
+    3: 'High',
+    4: 'High',
+    5: 'High',
+    6: 'High',
+    7: 'Medium',
+    8: 'High',
+    9: 'High',
+    10: 'Medium',
+    11: 'High',
+    12: 'Medium',
+  },
+};
+
 function renderDocx(templatePath, data) {
   const content = fs.readFileSync(templatePath);
   const zip = new PizZip(content);
@@ -61,6 +106,38 @@ function renderDocx(templatePath, data) {
     errorLogging: false,
   });
   doc.render(data);
+
+  // Post-process XML for Severity cell shading & text color
+  let docXml = doc.getZip().file('word/document.xml').asText();
+  if (docXml.includes('SEV_SHD_PLACEHOLDER')) {
+    const tcRegex = /<w:tc[\s>][\s\S]*?<\/w:tc>/g;
+    docXml = docXml.replace(tcRegex, (match) => {
+      if (!match.includes('SEV_SHD_PLACEHOLDER')) return match;
+      if (/Critical/i.test(match)) {
+        return match
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'FF0000') // Red
+          .replace(/SEV_COLOR_PLACEHOLDER/g, 'FFFFFF'); // White text
+      } else if (/High/i.test(match)) {
+        return match
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFA500') // Orange
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
+      } else if (/Medium/i.test(match)) {
+        return match
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFFF00') // Yellow
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
+      } else if (/Low/i.test(match)) {
+        return match
+          .replace(/SEV_SHD_PLACEHOLDER/g, '92D050') // Green
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
+      } else {
+        return match
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFFFFF')
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000');
+      }
+    });
+    doc.getZip().file('word/document.xml', docXml);
+  }
+
   return doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
 
@@ -114,12 +191,30 @@ export async function generateDocument(formData, aiData) {
   tcData.tc_per_report = perReport;
   tcData.total_testcase = totalTestcase;
 
-  // Ensure module_number is present (template may need it)
+  // Ensure module_number and severity are present (template needs both)
   if (Array.isArray(tcData.modules)) {
-    tcData.modules = tcData.modules.map((m, i) => ({
-      ...m,
-      module_number: m.module_number || String(i + 1),
-    }));
+    const ruleMap = SEVERITY_RULES[ticketType] || SEVERITY_RULES.CUBE_VIEW;
+    tcData.modules = tcData.modules.map((m, i) => {
+      const checklist = Array.isArray(m.checklist)
+        ? m.checklist.map((item, idx) => {
+            const snoNum = Number(item.sno) || (idx + 1);
+            let sev = item.severity || ruleMap[snoNum] || 'High';
+            if (/cric?tical/i.test(sev)) sev = 'Critical';
+            else if (/high/i.test(sev)) sev = 'High';
+            else if (/med/i.test(sev)) sev = 'Medium';
+            else if (/low/i.test(sev)) sev = 'Low';
+            return {
+              ...item,
+              severity: sev,
+            };
+          })
+        : [];
+      return {
+        ...m,
+        module_number: m.module_number || String(i + 1),
+        checklist,
+      };
+    });
   }
 
   const tcBuffer = renderDocx(tcTemplatePath, tcData);
