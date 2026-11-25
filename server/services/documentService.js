@@ -107,30 +107,38 @@ function renderDocx(templatePath, data) {
   });
   doc.render(data);
 
-  // Post-process XML for Severity cell shading & text color
+  // Post-process XML for Severity cell shading & text color & perfect center alignment
   let docXml = doc.getZip().file('word/document.xml').asText();
   if (docXml.includes('SEV_SHD_PLACEHOLDER')) {
     const tcRegex = /<w:tc[\s>][\s\S]*?<\/w:tc>/g;
     docXml = docXml.replace(tcRegex, (match) => {
       if (!match.includes('SEV_SHD_PLACEHOLDER')) return match;
-      if (/Critical/i.test(match)) {
-        return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'C10006') // Exact rich red from user sample image
-          .replace(/SEV_COLOR_PLACEHOLDER/g, 'FFFFFF'); // White bold text
-      } else if (/High/i.test(match)) {
-        return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'C10006') // Exact rich red from user sample image
-          .replace(/SEV_COLOR_PLACEHOLDER/g, 'FFFFFF'); // White bold text
-      } else if (/Medium/i.test(match)) {
-        return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'F8EE7E') // Light yellow from user sample image
-          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black bold text
-      } else if (/Low/i.test(match)) {
-        return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'C6EFCE') // Light green
-          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black bold text
+
+      let updatedCell = match;
+      // Ensure vertical alignment is centered
+      if (!updatedCell.includes('<w:vAlign')) {
+        updatedCell = updatedCell.replace('</w:tcPr>', '<w:vAlign w:val="center"/></w:tcPr>');
       } else {
-        return match
+        updatedCell = updatedCell.replace(/<w:vAlign\s+w:val="[^"]*"\/>/, '<w:vAlign w:val="center"/>');
+      }
+
+      // Ensure no extra after spacing that pushes text off-center
+      updatedCell = updatedCell.replace(/<w:spacing\s+[^>]*\/>/g, '<w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>');
+
+      if (/Critical/i.test(match) || /High/i.test(match)) {
+        return updatedCell
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'DC2626') // Vibrant medium-light red (lighter than #C10006, rich and non-pink)
+          .replace(/SEV_COLOR_PLACEHOLDER/g, 'FFFFFF'); // Bold white text
+      } else if (/Medium/i.test(match)) {
+        return updatedCell
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'F8EE7E') // Light pastel yellow
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Bold black text
+      } else if (/Low/i.test(match)) {
+        return updatedCell
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'C6EFCE') // Light green
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Bold black text
+      } else {
+        return updatedCell
           .replace(/SEV_SHD_PLACEHOLDER/g, 'FFFFFF')
           .replace(/SEV_COLOR_PLACEHOLDER/g, '000000');
       }
