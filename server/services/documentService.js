@@ -115,20 +115,20 @@ function renderDocx(templatePath, data) {
       if (!match.includes('SEV_SHD_PLACEHOLDER')) return match;
       if (/Critical/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFC7CE') // Light Red
-          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'C10006') // Exact rich red from user sample image
+          .replace(/SEV_COLOR_PLACEHOLDER/g, 'FFFFFF'); // White bold text
       } else if (/High/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'FFC7CE') // Light Red
-          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'C10006') // Exact rich red from user sample image
+          .replace(/SEV_COLOR_PLACEHOLDER/g, 'FFFFFF'); // White bold text
       } else if (/Medium/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'F8EE7E') // Light Yellow (matching user's image)
-          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'F8EE7E') // Light yellow from user sample image
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black bold text
       } else if (/Low/i.test(match)) {
         return match
-          .replace(/SEV_SHD_PLACEHOLDER/g, 'C6EFCE') // Light Green
-          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black text
+          .replace(/SEV_SHD_PLACEHOLDER/g, 'C6EFCE') // Light green
+          .replace(/SEV_COLOR_PLACEHOLDER/g, '000000'); // Black bold text
       } else {
         return match
           .replace(/SEV_SHD_PLACEHOLDER/g, 'FFFFFF')
@@ -155,8 +155,8 @@ export async function generateDocument(formData, aiData) {
   const reportCode = (formData.reportCode || 'RXXX').trim();
   const reportName = (aiData.rc && aiData.rc.report_name)
     || (aiData.tc_cube_view && aiData.tc_cube_view.modules && aiData.tc_cube_view.modules[0]
-        ? aiData.tc_cube_view.modules[0].module_name
-        : formData.reportCode || 'Report');
+      ? aiData.tc_cube_view.modules[0].module_name
+      : formData.reportCode || 'Report');
 
   // ── Testcase Document ──────────────────────────────────────────────────────
   const ticketType = aiData.ticket_type || 'CUBE_VIEW';
@@ -197,17 +197,17 @@ export async function generateDocument(formData, aiData) {
     tcData.modules = tcData.modules.map((m, i) => {
       const checklist = Array.isArray(m.checklist)
         ? m.checklist.map((item, idx) => {
-            const snoNum = Number(item.sno) || (idx + 1);
-            let sev = item.severity || ruleMap[snoNum] || 'High';
-            if (/cric?tical/i.test(sev)) sev = 'Critical';
-            else if (/high/i.test(sev)) sev = 'High';
-            else if (/med/i.test(sev)) sev = 'Medium';
-            else if (/low/i.test(sev)) sev = 'Low';
-            return {
-              ...item,
-              severity: sev,
-            };
-          })
+          const snoNum = Number(item.sno) || (idx + 1);
+          let sev = item.severity || ruleMap[snoNum] || 'High';
+          if (/cric?tical/i.test(sev)) sev = 'Critical';
+          else if (/high/i.test(sev)) sev = 'High';
+          else if (/med/i.test(sev)) sev = 'Medium';
+          else if (/low/i.test(sev)) sev = 'Low';
+          return {
+            ...item,
+            severity: sev,
+          };
+        })
         : [];
       return {
         ...m,
